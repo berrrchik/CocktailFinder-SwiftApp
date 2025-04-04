@@ -1,21 +1,34 @@
-//
-//  ContentView.swift
-//  CocktailFinder-SwiftApp
-//
-//  Created by Анастасия Берчик on 4/4/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selectedTab = 0
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView(selection: $selectedTab) {
+            NavigationStack() {
+                Text("Поиск")
+                    .navigationTitle("Cocktail Finder")
+            }
+            .tabItem {
+                Label("Поиск", systemImage: "magnifyingglass")
+            }
+            .tag(0)
+            NavigationStack() {
+                Text("Избранное")
+                    .navigationTitle("Cocktail Finder")
+            }
+            .tabItem {
+                Label("Избранное", systemImage: "heart")
+            }
+            .tag(1)
+            NavigationStack() {
+                Text("Случайный коктейль")
+                    .navigationTitle("Cocktail Finder")
+            }
+            .tabItem {
+                Label("Случайный коктейль", systemImage: "dice")
+            }
+            .tag(2)
         }
-        .padding()
     }
 }
 
