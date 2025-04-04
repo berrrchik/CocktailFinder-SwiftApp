@@ -4,6 +4,10 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var searchText = ""
     
+    init() {
+        UITabBar.appearance().backgroundColor = UIColor.white
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack() {
