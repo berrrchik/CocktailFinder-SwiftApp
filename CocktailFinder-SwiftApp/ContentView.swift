@@ -2,32 +2,43 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @State private var searchText = ""
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack() {
-                Text("Поиск")
+                SearchView()
                     .navigationTitle("Cocktail Finder")
             }
+            .searchable(text: $searchText, prompt: "Поиск коктейля")
             .tabItem {
                 Label("Поиск", systemImage: "magnifyingglass")
             }
             .tag(0)
             NavigationStack() {
-                Text("Избранное")
+                FilterView()
+                    .navigationTitle("Cocktail Finder")
+            }
+            .tabItem {
+                Label("Категории", systemImage: "checklist")
+            }
+            .tag(1)
+            NavigationStack() {
+                FavoriteCoctailsView()
                     .navigationTitle("Cocktail Finder")
             }
             .tabItem {
                 Label("Избранное", systemImage: "heart")
             }
-            .tag(1)
+            .tag(2)
             NavigationStack() {
-                Text("Случайный коктейль")
+                RandomCocktailView()
                     .navigationTitle("Cocktail Finder")
             }
             .tabItem {
-                Label("Случайный коктейль", systemImage: "dice")
+                Label("Рандом", systemImage: "dice")
             }
-            .tag(2)
+            .tag(3)
         }
     }
 }
