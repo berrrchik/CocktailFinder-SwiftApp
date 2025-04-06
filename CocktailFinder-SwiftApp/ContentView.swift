@@ -11,7 +11,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack() {
-                SearchView()
+                SearchView(searchText: searchText)
                     .navigationTitle("Cocktail Finder")
             }
             .searchable(text: $searchText, prompt: "Поиск коктейля")

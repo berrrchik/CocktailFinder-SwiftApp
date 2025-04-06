@@ -1,7 +1,15 @@
-//
-//  SearchView.swift
-//  CocktailFinder-SwiftApp
-//
-//  Created by Анастасия Берчик on 4/4/25.
-//
+import SwiftUI
+ 
+struct SearchView: View {
+    let searchText: String
 
+    var body: some View {
+        NavigationStack {
+            Text("Ищем \(searchText)")
+        }
+    }
+}
+
+#Preview {
+    SearchView(searchText: "vodka")
+}
