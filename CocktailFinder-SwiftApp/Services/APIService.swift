@@ -10,7 +10,9 @@ class APIService: CocktailServiceProtocol {
     private let baseURL = "https://www.thecocktaildb.com/api/json/v1/1"
     private let decoder = JSONDecoder()
     
-    private init() {}
+    private init() {
+        print("APIService initialized")
+    }
     
     func fetchCocktailByName(_ name: String) async throws -> [Cocktail] {
         let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
@@ -21,17 +23,20 @@ class APIService: CocktailServiceProtocol {
     }
     
     func fetchFilterOptions() async throws -> [FilterCategory] {
+        print("Fetching filter options")
         async let categories = fetchList(type: .category)
         async let glasses = fetchList(type: .glass)
         async let ingredients = fetchList(type: .ingredient)
         async let alcoholicOptions = fetchList(type: .alcoholic)
         
-        return try await [
-            FilterCategory(type: .category, name: "Category", options: categories),
-            FilterCategory(type: .glass, name: "Glass", options: glasses),
-            FilterCategory(type: .ingredient, name: "Ingredient", options: ingredients),
-            FilterCategory(type: .alcoholic, name: "Alcoholic", options: alcoholicOptions)
+        let results = try await [
+            FilterCategory(type: .category, name: "Категории", options: categories),
+            FilterCategory(type: .glass, name: "Стаканы", options: glasses),
+            FilterCategory(type: .ingredient, name: "Ингредиенты", options: ingredients),
+            FilterCategory(type: .alcoholic, name: "Тип напитка", options: alcoholicOptions)
         ]
+        print("Received all filter options: \(results)")
+        return results
     }
     
     private func fetchList(type: FilterType) async throws -> [String] {
@@ -43,10 +48,21 @@ class APIService: CocktailServiceProtocol {
         case .alcoholic: endpoint = "list.php?a=list"
         }
         
-        let (data, _) = try await URLSession.shared.data(from: URL(string: "\(baseURL)/\(endpoint)")!)
-        let response = try decoder.decode(ListResponse.self, from: data)
+        let url = URL(string: "\(baseURL)/\(endpoint)")!
+        print("Fetching \(type) from URL: \(url)")
         
-        return response.drinks.compactMap {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            print("Invalid response for \(type)")
+            throw APIError.invalidResponse
+        }
+        
+        print("Received data for \(type): \(String(data: data, encoding: .utf8) ?? "none")")
+        
+        let listResponse = try decoder.decode(ListResponse.self, from: data)
+        let results = listResponse.drinks.compactMap {
             switch type {
             case .category: return $0.strCategory
             case .glass: return $0.strGlass
@@ -54,6 +70,8 @@ class APIService: CocktailServiceProtocol {
             case .alcoholic: return $0.strAlcoholic
             }
         }
+        print("Parsed results for \(type): \(results)")
+        return results
     }
 }
 
