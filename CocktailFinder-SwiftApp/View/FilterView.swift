@@ -13,32 +13,21 @@ struct FilterOption: Identifiable {
 }
 
 class FilterManager: ObservableObject {
-    @Published var categories: [FilterCategory1]
-    @Published var selectedOptionID: UUID?
+    @Published var categories: [FilterCategory]
+    @Published var selectedOption: String?
     
-    init(categories: [FilterCategory1]) {
+    init(categories: [FilterCategory]) {
         self.categories = categories
     }
     
-    func selectOption(_ optionID: UUID) {
-        resetAllSelections()
-        selectedOptionID = optionID
-        
-        for i in categories.indices {
-            for j in categories[i].options.indices {
-                if categories[i].options[j].id == optionID {
-                    categories[i].options[j].isSelected = true
-                }
+    func selectOption(_ option: String) {
+        withAnimation {
+            if selectedOption == option {
+                selectedOption = nil
+            } else {
+                selectedOption = option
             }
-        }
-    }
-    
-    private func resetAllSelections() {
-        selectedOptionID = nil
-        for i in categories.indices {
-            for j in categories[i].options.indices {
-                categories[i].options[j].isSelected = false
-            }
+            print("Selected option: \(String(describing: selectedOption))")
         }
     }
 }
@@ -46,64 +35,91 @@ class FilterManager: ObservableObject {
 import SwiftUI
 
 struct FilterView: View {
-    @StateObject private var filterManager = FilterManager(
-        categories: [
-            FilterCategory1(
-                name: "Алкоголь",
-                options: [
-                    FilterOption(name: "Алкогольный"),
-                    FilterOption(name: "Безалкогольный")
-                ]
-            ),
-            FilterCategory1(
-                name: "По тегам",
-                options: [
-                    FilterOption(name: "Тэг 1"),
-                    FilterOption(name: "Тэг 2")
-                ]
-            ),
-            FilterCategory1(
-                name: "По типу стакана",
-                options: [
-                    FilterOption(name: "Стакан 1"),
-                    FilterOption(name: "Стакан 2")
-                ]
-            ),
-            FilterCategory1(
-                name: "По ингредиентам",
-                options: [
-                    FilterOption(name: "Ингредиент 1"),
-                    FilterOption(name: "Ингредиент 2")
-                ]
-            )
-        ]
-    )
+    @StateObject private var viewModel = FilterViewModel()
+    
     var body: some View {
-           NavigationStack {
-               List {
-                   ForEach($filterManager.categories) { $category in
-                       DisclosureGroup(
-                           content: {
-                               ForEach(category.options) { option in
-                                   FilterOptionRow(
-                                       title: option.name,
-                                       isSelected: option.id == filterManager.selectedOptionID
-                                   ) {
-                                       filterManager.selectOption(option.id)
-                                   }
-                               }
-                           },
-                           label: {
-                               Text(category.name)
-                                   .font(.headline)
-                           }
-                       )
-                   }
-               }
-               .listStyle(.insetGrouped)
-           }
-       }
-   }
+        NavigationStack {
+            Group {
+                if viewModel.isLoading {
+                    ProgressView("Загрузка...")
+                } else if let error = viewModel.error {
+                    VStack {
+                        Text("Ошибка загрузки")
+                            .font(.headline)
+                        Text(error.localizedDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                        Button("Повторить") {
+                            Task {
+                                await viewModel.loadFilterOptions()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding()
+                } else if viewModel.filterManager.categories.isEmpty {
+                    Text("Нет доступных фильтров")
+                        .font(.headline)
+                } else {
+                    List {
+                        ForEach(viewModel.filterManager.categories) { category in
+                            DisclosureGroup(
+                                content: {
+                                    ForEach(category.options, id: \.self) { option in
+                                        FilterOptionRow(
+                                            title: option,
+                                            isSelected: viewModel.filterManager.selectedOption == option
+                                        ) {
+                                            withAnimation {
+                                                viewModel.filterManager.selectOption(option)
+                                            }
+                                        }
+                                    }
+                                },
+                                label: {
+                                    Text(category.name)
+                                        .font(.headline)
+                                }
+                            )
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                }
+            }
+        }
+        .task {
+            print("FilterView appeared, starting data load")
+            await viewModel.loadFilterOptions()
+        }
+    }
+}
+
+class FilterViewModel: ObservableObject {
+    @Published var filterManager: FilterManager
+    private let apiService = APIService.shared
+    @Published var isLoading = false
+    @Published var error: Error?
+    
+    init() {
+        self.filterManager = FilterManager(categories: [])
+        print("FilterViewModel initialized")
+    }
+    
+    @MainActor
+    func loadFilterOptions() async {
+        isLoading = true
+        print("Starting to load filter options")
+        do {
+            let categories = try await apiService.fetchFilterOptions()
+            print("Received categories: \(categories)")
+            filterManager.categories = categories
+        } catch {
+            print("Error loading filter options: \(error)")
+            self.error = error
+        }
+        isLoading = false
+    }
+}
 
 struct FilterOptionRow: View {
     let title: String
@@ -111,7 +127,9 @@ struct FilterOptionRow: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button {
+            action()
+        } label: {
             HStack {
                 Text(title)
                     .foregroundColor(isSelected ? .blue : .primary)
@@ -123,11 +141,13 @@ struct FilterOptionRow: View {
                         .foregroundColor(.blue)
                 }
             }
+            .contentShape(Rectangle())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PlainButtonStyle())
     }
 }
-
 
 struct FilterView_Previews: PreviewProvider {
     static var previews: some View {
