@@ -4,6 +4,7 @@ protocol CocktailServiceProtocol {
     func fetchCocktailByName(_ name: String) async throws -> [Cocktail]
     func fetchFilterOptions() async throws -> [FilterCategory]
     func fetchRandomCocktail() async throws -> Cocktail
+    func fetchCocktailById(_ id: String) async throws -> Cocktail
 }
 
 class APIService: CocktailServiceProtocol {
@@ -21,6 +22,25 @@ class APIService: CocktailServiceProtocol {
         
         let (data, _) = try await URLSession.shared.data(from: url)
         return try decoder.decode(CocktailResponse.self, from: data).drinks
+    }
+    
+    func fetchCocktailById(_ id: String) async throws -> Cocktail {
+        let url = URL(string: "\(baseURL)/lookup.php?i=\(id)")!
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        
+        let cocktailResponse = try decoder.decode(CocktailResponse.self, from: data)
+        
+        guard let cocktail = cocktailResponse.drinks.first else {
+            throw APIError.decodingFailed
+        }
+        
+        return cocktail
     }
     
     func fetchRandomCocktail() async throws -> Cocktail {
