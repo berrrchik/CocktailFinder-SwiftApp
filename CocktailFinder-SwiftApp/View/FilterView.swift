@@ -1,38 +1,31 @@
 import SwiftUI
 
-struct FilterCategory1: Identifiable {
-    let id = UUID()
-    var name: String
-    var options: [FilterOption]
-}
-
-struct FilterOption: Identifiable {
-    let id = UUID()
-    var name: String
-    var isSelected: Bool = false
-}
-
 class FilterManager: ObservableObject {
     @Published var categories: [FilterCategory]
-    @Published var selectedOption: String?
     
     init(categories: [FilterCategory]) {
         self.categories = categories
     }
     
-    func selectOption(_ option: String) {
-        withAnimation {
-            if selectedOption == option {
-                selectedOption = nil
-            } else {
-                selectedOption = option
+    func selectOption(_ optionID: UUID) {
+        resetAllSelections()
+        
+        for category in categories {
+            if let index = category.options.firstIndex(where: { $0.id == optionID }) {
+                category.options[index].isSelected = true
+                break
             }
-            print("Selected option: \(String(describing: selectedOption))")
+        }
+    }
+    
+    private func resetAllSelections() {
+        for category in categories {
+            for i in category.options.indices {
+                category.options[i].isSelected = false
+            }
         }
     }
 }
-
-import SwiftUI
 
 struct FilterView: View {
     @StateObject private var viewModel = FilterViewModel()
@@ -65,15 +58,13 @@ struct FilterView: View {
                         ForEach(viewModel.filterManager.categories) { category in
                             DisclosureGroup(
                                 content: {
-                                    ForEach(category.options, id: \.self) { option in
+                                    ForEach(category.options) { option in
                                         FilterOptionRow(
-                                            title: option,
-                                            isSelected: viewModel.filterManager.selectedOption == option
-                                        ) {
-                                            withAnimation {
-                                                viewModel.filterManager.selectOption(option)
+                                            option: option,
+                                            action: {
+                                                viewModel.filterManager.selectOption(option.id)
                                             }
-                                        }
+                                        )
                                     }
                                 },
                                 label: {
@@ -122,8 +113,7 @@ class FilterViewModel: ObservableObject {
 }
 
 struct FilterOptionRow: View {
-    let title: String
-    let isSelected: Bool
+    @ObservedObject var option: FilterOption
     let action: () -> Void
     
     var body: some View {
@@ -131,12 +121,12 @@ struct FilterOptionRow: View {
             action()
         } label: {
             HStack {
-                Text(title)
-                    .foregroundColor(isSelected ? .blue : .primary)
+                Text(option.name)
+                    .foregroundColor(option.isSelected ? .blue : .primary)
                 
                 Spacer()
                 
-                if isSelected {
+                if option.isSelected {
                     Image(systemName: "checkmark")
                         .foregroundColor(.blue)
                 }

@@ -7,9 +7,15 @@ enum FilterType {
     case alcoholic
 }
 
-struct FilterCategory: Identifiable {
+class FilterCategory: Identifiable, ObservableObject {
     let id = UUID()
     let type: FilterType
     let name: String
-    let options: [String]
+    @Published var options: [FilterOption] 
+    
+    init(type: FilterType, name: String, options: [FilterOption]) {
+        self.type = type
+        self.name = name
+        self.options = options
+    }
 }

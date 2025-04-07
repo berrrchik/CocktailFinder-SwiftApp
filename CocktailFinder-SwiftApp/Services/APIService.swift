@@ -30,16 +30,32 @@ class APIService: CocktailServiceProtocol {
         async let alcoholicOptions = fetchList(type: .alcoholic)
         
         let results = try await [
-            FilterCategory(type: .category, name: "Категории", options: categories),
-            FilterCategory(type: .glass, name: "Стаканы", options: glasses),
-            FilterCategory(type: .ingredient, name: "Ингредиенты", options: ingredients),
-            FilterCategory(type: .alcoholic, name: "Тип напитка", options: alcoholicOptions)
+            FilterCategory(
+                type: .category,
+                name: "Категории",
+                options: categories
+            ),
+            FilterCategory(
+                type: .glass,
+                name: "Стаканы",
+                options: glasses
+            ),
+            FilterCategory(
+                type: .ingredient,
+                name: "Ингредиенты",
+                options: ingredients
+            ),
+            FilterCategory(
+                type: .alcoholic,
+                name: "Тип напитка",
+                options: alcoholicOptions
+            )
         ]
         print("Received all filter options: \(results)")
         return results
     }
-    
-    private func fetchList(type: FilterType) async throws -> [String] {
+
+    private func fetchList(type: FilterType) async throws -> [FilterOption] {
         let endpoint: String
         switch type {
         case .category: endpoint = "list.php?c=list"
@@ -62,16 +78,16 @@ class APIService: CocktailServiceProtocol {
         print("Received data for \(type): \(String(data: data, encoding: .utf8) ?? "none")")
         
         let listResponse = try decoder.decode(ListResponse.self, from: data)
-        let results = listResponse.drinks.compactMap {
+        let results = listResponse.drinks.compactMap { entry -> String? in
             switch type {
-            case .category: return $0.strCategory
-            case .glass: return $0.strGlass
-            case .ingredient: return $0.strIngredient
-            case .alcoholic: return $0.strAlcoholic
+            case .category: return entry.strCategory
+            case .glass: return entry.strGlass
+            case .ingredient: return entry.strIngredient
+            case .alcoholic: return entry.strAlcoholic
             }
         }
-        print("Parsed results for \(type): \(results)")
-        return results
+        
+        return results.map { FilterOption(name: $0, isSelected: false) }
     }
 }
 
