@@ -5,6 +5,7 @@ protocol CocktailServiceProtocol {
     func fetchFilterOptions() async throws -> [FilterCategory]
     func fetchRandomCocktail() async throws -> Cocktail
     func fetchCocktailById(_ id: String) async throws -> Cocktail
+    func fetchCocktailsByFilter(type: FilterType, value: String) async throws -> [Cocktail]
 }
 
 class APIService: CocktailServiceProtocol {
@@ -60,6 +61,50 @@ class APIService: CocktailServiceProtocol {
         }
         
         return cocktail
+    }
+    
+    func fetchCocktailsByFilter(type: FilterType, value: String) async throws -> [Cocktail] {
+        let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let endpoint: String
+        
+        switch type {
+        case .category:
+            endpoint = "filter.php?c=\(encodedValue)"
+        case .glass:
+            endpoint = "filter.php?g=\(encodedValue)"
+        case .ingredient:
+            endpoint = "filter.php?i=\(encodedValue)"
+        case .alcoholic:
+            endpoint = "filter.php?a=\(encodedValue)"
+        }
+        
+        let url = URL(string: "\(baseURL)/\(endpoint)")!
+        print("Fetching cocktails with filter: \(endpoint)")
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        
+        // Сначала декодируем ответ в FilteredCocktailResponse
+        let filteredResponse = try decoder.decode(FilteredCocktailResponse.self, from: data)
+        
+        // Затем для каждого коктейля из фильтрованного ответа получаем полные данные
+        var fullCocktails: [Cocktail] = []
+        
+        for filteredCocktail in filteredResponse.drinks {
+            do {
+                let fullCocktail = try await fetchCocktailById(filteredCocktail.id)
+                fullCocktails.append(fullCocktail)
+            } catch {
+                print("Ошибка при загрузке полных данных для коктейля \(filteredCocktail.id): \(error)")
+                continue
+            }
+        }
+        
+        return fullCocktails
     }
     
     func fetchFilterOptions() async throws -> [FilterCategory] {
@@ -134,6 +179,22 @@ class APIService: CocktailServiceProtocol {
 // MARK: - Вспомогательные структуры
 fileprivate struct CocktailResponse: Decodable {
     let drinks: [Cocktail]
+}
+
+fileprivate struct FilteredCocktailResponse: Decodable {
+    let drinks: [FilteredCocktail]
+    
+    struct FilteredCocktail: Decodable {
+        let id: String
+        let name: String
+        let thumbnail: String
+        
+        enum CodingKeys: String, CodingKey {
+            case id = "idDrink"
+            case name = "strDrink"
+            case thumbnail = "strDrinkThumb"
+        }
+    }
 }
 
 fileprivate struct ListResponse: Decodable {
