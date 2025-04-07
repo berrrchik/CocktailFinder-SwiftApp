@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		577C76322DA3F9600052ECF3 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 577C76312DA3F9600052ECF3 /* SDWebImageSwiftUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		577C75F22D9F40770052ECF3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				577C76322DA3F9600052ECF3 /* SDWebImageSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = "CocktailFinder-SwiftApp";
 			packageProductDependencies = (
+				577C76312DA3F9600052ECF3 /* SDWebImageSwiftUI */,
 			);
 			productName = "CocktailFinder-SwiftApp";
 			productReference = 577C75E12D9F40750052ECF3 /* CocktailFinder-SwiftApp.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 577C75D82D9F40750052ECF3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				577C76302DA3F9600052ECF3 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 577C75E22D9F40750052ECF3 /* Products */;
 			projectDirPath = "";
@@ -558,6 +567,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		577C76302DA3F9600052ECF3 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		577C76312DA3F9600052ECF3 /* SDWebImageSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 577C76302DA3F9600052ECF3 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
+			productName = SDWebImageSwiftUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 577C75D92D9F40750052ECF3 /* Project object */;
 }
