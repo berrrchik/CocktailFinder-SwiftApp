@@ -94,31 +94,32 @@ struct FilterView: View {
                         .font(.headline)
                 } else {
                     VStack {
-                    List {
-                        Section {
-                            ForEach(viewModel.filterManager.categories) { category in
-                                DisclosureGroup(
-                                    content: {
-                                        ForEach(category.options) { option in
-                                            FilterOptionRow(
-                                                option: option,
-                                                action: {
-                                                    viewModel.filterManager.selectOption(option.id)
-                                                }
-                                            )
+                        List {
+                            Section {
+                                ForEach(viewModel.filterManager.categories) { category in
+                                    DisclosureGroup(
+                                        content: {
+                                            ForEach(category.options) { option in
+                                                FilterOptionRow(
+                                                    option: option,
+                                                    action: {
+                                                        viewModel.filterManager.selectOption(option.id)
+                                                    }
+                                                )
+                                            }
+                                        },
+                                        label: {
+                                            Text(category.name)
+                                                .font(.headline)
                                         }
-                                    },
-                                    label: {
-                                        Text(category.name)
-                                            .font(.headline)
-                                    }
-                                )
+                                    )
+                                }
+                            }
+                            
+                            Section {
+                                ResultsSection(filterManager: viewModel.filterManager)
                             }
                         }
-                        Section {
-                            ResultsSection(filterManager: viewModel.filterManager)
-                        }
-                    }
                         .listStyle(.insetGrouped)
                     }
                 }
@@ -126,7 +127,6 @@ struct FilterView: View {
             .navigationTitle("Фильтр коктейлей")
         }
         .task {
-            print("FilterView appeared, starting data load")
             await viewModel.loadFilterOptions()
         }
     }
@@ -136,13 +136,23 @@ struct ResultsSection: View {
     @ObservedObject var filterManager: FilterManager
     
     var body: some View {
-        VStack {
-            if filterManager.isLoading {
-                VStack {
-                    ProgressView("Загрузка коктейлей...")
-                        .frame(maxWidth: .infinity, alignment: .center) 
+        Group {
+            if !filterManager.selectedFilterName.isEmpty {
+                HStack {
+                    Text("Результаты для \"\(filterManager.selectedFilterName)\"")
+                        .font(.headline)
+                    
+                    Spacer()
+                    
+                    Text("\(filterManager.filteredCocktails.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 40)
+            }
+            
+            if filterManager.isLoading {
+                ProgressView("Загрузка коктейлей...")
+                    .frame(maxWidth: .infinity)
             } else if let error = filterManager.error {
                 VStack {
                     Text("Ошибка загрузки коктейлей")
@@ -153,24 +163,49 @@ struct ResultsSection: View {
                 }
                 .padding()
             } else if !filterManager.filteredCocktails.isEmpty {
-                Text("Результаты для \"\(filterManager.selectedFilterName)\"")
-                    .font(.headline)
-                    .padding(.top)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                
-                ScrollView(.vertical, showsIndicators: true) {
-                    LazyVGrid(columns: [
-                        GridItem(.adaptive(minimum: 160), spacing: 16)
-                    ], spacing: 16) {
-                        ForEach(filterManager.filteredCocktails) { cocktail in
-                            CocktailCardView(cocktail: cocktail)
-                        }
+                ForEach(filterManager.filteredCocktails) { cocktail in
+                    NavigationLink(destination: RecipeView(drinkId: cocktail.id)) {
+                        CocktailListItemView(
+                            cocktail: cocktail,
+                            filterTag: filterManager.selectedFilterName
+                        )
                     }
-                    .padding()
                 }
             }
         }
+        .headerProminence(.increased)
+    }
+}
+
+
+struct CocktailListItemView: View {
+    let cocktail: Cocktail
+    let filterTag: String
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            WebImage(url: URL(string: cocktail.thumbnail))
+                .resizable()
+                .scaledToFill()
+                .frame(width: 50, height: 50)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            
+            VStack(alignment: .leading, spacing: 5) {
+                Text(cocktail.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                HStack(spacing: 5) {
+                    Image(systemName: "wineglass")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(filterTag)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 8)
     }
 }
 
