@@ -10,9 +10,6 @@ struct RandomCocktailView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("Случайный коктейль")
-                    .font(.title)
-                
                 Button {
                     fetchRandomCocktail()
                 } label: {
@@ -50,6 +47,7 @@ struct RandomCocktailView: View {
             }
             .padding()
         }
+        .navigationTitle("Случайный коктейль")
     }
     
     private func fetchRandomCocktail() {
