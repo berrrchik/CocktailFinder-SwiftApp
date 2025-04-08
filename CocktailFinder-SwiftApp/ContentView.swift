@@ -11,8 +11,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack() {
-                SearchView(searchText: searchText)
-                    .navigationTitle("Cocktail Finder")
+                SearchView()
             }
             .searchable(text: $searchText, prompt: "Поиск коктейля")
             .tabItem {
@@ -29,7 +28,6 @@ struct ContentView: View {
             .tag(1)
             NavigationStack() {
                 FavoriteCoctailsView()
-                    .navigationTitle("Cocktail Finder")
             }
             .tabItem {
                 Label("Избранное", systemImage: "heart")
@@ -37,7 +35,6 @@ struct ContentView: View {
             .tag(2)
             NavigationStack() {
                 RandomCocktailView()
-                    .navigationTitle("Cocktail Finder")
             }
             .tabItem {
                 Label("Рандом", systemImage: "dice")
