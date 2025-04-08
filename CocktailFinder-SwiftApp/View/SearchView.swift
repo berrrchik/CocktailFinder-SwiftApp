@@ -9,6 +9,9 @@ struct SearchView: View {
     
     private let apiService = APIService.shared
     private let popularCocktailIds = ["11000", "11001", "11002", "11003", "11004", "11005", "11006", "11007"]
+    private let cacheKey = "cachedPopularCocktails"
+    private let cacheExpirationKey = "popularCocktailsCacheExpiration"
+    private let cacheExpirationTime: TimeInterval = 60 * 60 * 24
 
     var body: some View {
         NavigationStack {
@@ -88,6 +91,11 @@ struct SearchView: View {
     private func loadPopularCocktails() {
         guard searchText.isEmpty else { return }
         
+        if let cachedCocktails = getCachedPopularCocktails() {
+            self.cocktails = cachedCocktails
+            return
+        }
+        
         isLoading = true
         error = nil
         cocktails = []
@@ -104,6 +112,7 @@ struct SearchView: View {
                 DispatchQueue.main.async {
                     self.cocktails = popularCocktails
                     self.isLoading = false
+                    self.cachePopularCocktails(popularCocktails)
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -111,6 +120,43 @@ struct SearchView: View {
                     self.isLoading = false
                 }
             }
+        }
+    }
+    
+    private func cachePopularCocktails(_ cocktails: [Cocktail]) {
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(cocktails)
+            UserDefaults.standard.set(data, forKey: cacheKey)
+            
+            let expirationDate = Date().addingTimeInterval(cacheExpirationTime)
+            UserDefaults.standard.set(expirationDate.timeIntervalSince1970, forKey: cacheExpirationKey)
+        } catch {
+            print("Ошибка при кэшировании популярных коктейлей: \(error)")
+        }
+    }
+    
+    private func getCachedPopularCocktails() -> [Cocktail]? {
+        if let expirationTimeInterval = UserDefaults.standard.object(forKey: cacheExpirationKey) as? TimeInterval {
+            let expirationDate = Date(timeIntervalSince1970: expirationTimeInterval)
+            if Date() > expirationDate {
+                UserDefaults.standard.removeObject(forKey: cacheKey)
+                UserDefaults.standard.removeObject(forKey: cacheExpirationKey)
+                return nil
+            }
+        }
+        
+        guard let cachedData = UserDefaults.standard.data(forKey: cacheKey) else {
+            return nil
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            let cachedCocktails = try decoder.decode([Cocktail].self, from: cachedData)
+            return cachedCocktails
+        } catch {
+            print("Ошибка при чтении кэша популярных коктейлей: \(error)")
+            return nil
         }
     }
 }
