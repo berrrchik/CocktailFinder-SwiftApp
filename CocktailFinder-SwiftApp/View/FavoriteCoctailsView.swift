@@ -9,6 +9,7 @@ struct FavoriteCoctailsView: View {
                 .font(.title)
                 .foregroundColor(.blue)
         }
+        .navigationTitle("Избранное")
     }
 }
 
