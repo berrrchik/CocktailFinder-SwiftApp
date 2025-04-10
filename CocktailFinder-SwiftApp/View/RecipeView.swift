@@ -60,12 +60,12 @@ struct RecipeView: View {
                                 .fontWeight(.bold)
                             
                             if let tags = cocktail.tags {
-                                HStack {
+                                FlowLayout(spacing: 8) {
                                     Image(systemName: "tag")
                                     ForEach(tags.components(separatedBy: ","), id: \.self) { tag in
                                         Text(tag)
                                             .font(.caption)
-                                            .padding(.horizontal, 10)
+                                            .padding(.horizontal, 5)
                                             .padding(.vertical, 5)
                                             .background(Color.gray.opacity(0.2))
                                             .cornerRadius(15)
@@ -76,7 +76,7 @@ struct RecipeView: View {
                                 Image(systemName: "wineglass")
                                 Text(cocktail.alcoholic)
                                     .font(.caption)
-                                    .padding(.horizontal, 10)
+                                    .padding(.horizontal, 5)
                                     .padding(.vertical, 5)
                                     .background(Color.gray.opacity(0.2))
                                     .cornerRadius(15)
@@ -195,6 +195,44 @@ struct RecipeView: View {
                 }
             }
         }
+    }
+}
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        return arrangeSubviews(sizes: sizes, proposal: proposal).size
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let offsets = arrangeSubviews(sizes: sizes, proposal: proposal).offsets
+        
+        for (offset, subview) in zip(offsets, subviews) {
+            subview.place(at: CGPoint(x: bounds.minX + offset.x, y: bounds.minY + offset.y), proposal: .unspecified)
+        }
+    }
+    
+    private func arrangeSubviews(sizes: [CGSize], proposal: ProposedViewSize) -> (offsets: [CGPoint], size: CGSize) {
+        let maxWidth = proposal.width ?? .infinity
+        var offsets: [CGPoint] = []
+        var currentPosition = CGPoint.zero
+        var maxY: CGFloat = 0
+        
+        for size in sizes {
+            if currentPosition.x + size.width > maxWidth {
+                currentPosition.x = 0
+                currentPosition.y = maxY + spacing
+            }
+            
+            offsets.append(currentPosition)
+            currentPosition.x += size.width + spacing
+            maxY = max(maxY, currentPosition.y + size.height)
+        }
+        
+        return (offsets, CGSize(width: maxWidth, height: maxY))
     }
 }
 
