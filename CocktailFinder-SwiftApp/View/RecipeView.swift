@@ -8,6 +8,8 @@ struct RecipeView: View {
     @State var isLoading = false
     @State var error: Error?
     
+    @Environment(\.dismiss) var dismiss
+    
     private let apiService = APIService.shared
     private let favoritesService = FavoritesService.shared
     
@@ -16,120 +18,121 @@ struct RecipeView: View {
     }
     
     var body: some View {
-        ScrollView {
-            if isLoading {
-                ProgressView("Загрузка...")
-                    .padding()
-            } else if let error = error {
-                errorView
-            } else if let cocktail = cocktail {
-                VStack(spacing: 0) {
-                    HStack {
-                        Button(action: {
-                        }) {
-                            Text("Назад")
-                                .foregroundColor(.black)
-                        }
-                        
-                        Spacer()
-                        
-                        Text("Рецепт")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            isFavorite.toggle()
-                            if isFavorite {
-                                favoritesService.addToFavorites(cocktail)
-                            } else {
-                                favoritesService.removeFromFavorites(cocktail)
-                            }
-                        }) {
-                            Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                .foregroundColor(isFavorite ? .red : .black)
-                        }
-                    }
-                    .padding()
-                    
-                    HStack(alignment: .top, spacing: 20) {
-                        WebImage(url: URL(string: cocktail.thumbnail))
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 120, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                        
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(cocktail.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
+        NavigationStack {
+            ScrollView {
+                if isLoading {
+                    ProgressView("Загрузка...")
+                        .padding()
+                } else if let error = error {
+                    errorView
+                } else if let cocktail = cocktail {
+                    VStack(spacing: 0) {
+                        HStack(alignment: .top, spacing: 20) {
+                            WebImage(url: URL(string: cocktail.thumbnail))
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 120, height: 120)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                             
-                            if let tags = cocktail.tags {
-                                FlowLayout(spacing: 8) {
-                                    Image(systemName: "tag")
-                                    ForEach(tags.components(separatedBy: ","), id: \.self) { tag in
-                                        Text(tag)
-                                            .font(.caption)
-                                            .padding(.horizontal, 5)
-                                            .padding(.vertical, 5)
-                                            .background(Color.gray.opacity(0.2))
-                                            .cornerRadius(15)
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(cocktail.name)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                
+                                if let tags = cocktail.tags {
+                                    FlowLayout(spacing: 8) {
+                                        Image(systemName: "tag")
+                                        ForEach(tags.components(separatedBy: ","), id: \.self) { tag in
+                                            Text(tag)
+                                                .font(.caption)
+                                                .padding(.horizontal, 5)
+                                                .padding(.vertical, 5)
+                                                .background(Color.gray.opacity(0.2))
+                                                .cornerRadius(15)
+                                        }
                                     }
                                 }
-                            }
-                            HStack{
-                                Image(systemName: "wineglass")
-                                Text(cocktail.alcoholic)
-                                    .font(.caption)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 5)
-                                    .background(Color.gray.opacity(0.2))
-                                    .cornerRadius(15)
-                            }
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding()
-                    
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Ингредиенты: \(cocktail.ingredients.count)")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        VStack(alignment: .leading, spacing: 5) {
-                            ForEach(Array(cocktail.ingredients.enumerated()), id: \.element) { index, ingredient in
-                                HStack {
-                                    Text("\(index + 1).")
-                                    Text(ingredient.name)
-                                    Spacer()
-                                    Text(ingredient.measure)
+                                HStack{
+                                    Image(systemName: "wineglass")
+                                    Text(cocktail.alcoholic)
+                                        .font(.caption)
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 5)
+                                        .background(Color.gray.opacity(0.2))
+                                        .cornerRadius(15)
                                 }
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding()
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Ингредиенты: \(cocktail.ingredients.count)")
+                                .font(.headline)
                                 .padding(.horizontal)
+                            
+                            VStack(alignment: .leading, spacing: 5) {
+                                ForEach(Array(cocktail.ingredients.enumerated()), id: \.element) { index, ingredient in
+                                    HStack {
+                                        Text("\(index + 1).")
+                                        Text(ingredient.name)
+                                        Spacer()
+                                        Text(ingredient.measure)
+                                    }
+                                    .padding(.horizontal)
+                                }
                             }
                         }
+                        .padding(.vertical)
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Инструкция")
+                                .font(.headline)
+                                .padding(.horizontal)
+                            
+                            Text("Сервировка: \(cocktail.glass)")
+                                .padding(.horizontal)
+                            
+                            Text(cocktail.instructions)
+                                .padding(.horizontal)
+                                .padding(.top, 5)
+                            
+                        }
+                        .padding(.vertical)
                     }
-                    .padding(.vertical)
-                    
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Инструкция")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        Text("Сервировка: \(cocktail.glass)")
-                            .padding(.horizontal)
-                        
-                        Text(cocktail.instructions)
-                            .padding(.horizontal)
-                            .padding(.top, 5)
-                        
-                    }
-                    .padding(.vertical)
+                } else {
+                    Text("Нет данных о коктейле")
+                        .padding()
                 }
-            } else {
-                Text("Нет данных о коктейле")
-                    .padding()
+            }
+            .navigationTitle("Рецепт")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "chevron.left")
+                            Text("Назад")
+                        }
+                        .foregroundColor(.blue)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        isFavorite.toggle()
+                        if isFavorite {
+                            favoritesService.addToFavorites(cocktail!)
+                        } else {
+                            favoritesService.removeFromFavorites(cocktail!)
+                        }
+                    }) {
+                        Image(systemName: isFavorite ? "heart.fill" : "heart")
+                            .foregroundColor(isFavorite ? .red : .black)
+                    }
+                }
             }
         }
         .onAppear {
