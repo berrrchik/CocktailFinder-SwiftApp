@@ -9,6 +9,7 @@ struct RecipeView: View {
     @State var error: Error?
     
     private let apiService = APIService.shared
+    private let favoritesService = FavoritesService.shared
     
     init(drinkId: String = "11007") {
         self.drinkId = drinkId
@@ -40,6 +41,11 @@ struct RecipeView: View {
                         
                         Button(action: {
                             isFavorite.toggle()
+                            if isFavorite {
+                                favoritesService.addToFavorites(cocktail)
+                            } else {
+                                favoritesService.removeFromFavorites(cocktail)
+                            }
                         }) {
                             Image(systemName: isFavorite ? "heart.fill" : "heart")
                                 .foregroundColor(isFavorite ? .red : .black)
@@ -185,7 +191,7 @@ struct RecipeView: View {
                 
                 DispatchQueue.main.async {
                     self.cocktail = loadedCocktail
-                    self.isFavorite = loadedCocktail.isFavorite
+                    self.isFavorite = favoritesService.isFavorite(loadedCocktail)
                     self.isLoading = false
                 }
             } catch {
