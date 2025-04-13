@@ -1,74 +1,73 @@
 import SwiftUI
 
 struct RandomCocktailView: View {
-    @State private var cocktail: Cocktail?
-    @State private var isLoading = false
-    @State private var error: Error?
-    
-    private let apiService = APIService.shared
+    @StateObject private var viewModel = RandomCocktailViewModel()
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Button {
-                    fetchRandomCocktail()
-                } label: {
-                    Label("Попытать удачу", systemImage: "dice")
-                }
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 20)
-                .background(Color.blue)
-                .cornerRadius(14)
-                
-                if isLoading {
-                    ProgressView("Ищем случайный коктейль...")
+            VStack {
+                if viewModel.isLoading {
+                    ProgressView("Загрузка случайного коктейля...")
                         .padding()
-                } else if let error = error {
-                    VStack {
-                        Text("Ошибка загрузки")
-                            .font(.headline)
-                        Text(error.localizedDescription)
-                            .foregroundColor(.red)
+                } else if let error = viewModel.error {
+                    errorView
+                } else if let cocktail = viewModel.cocktail {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            Text("Сегодня попробуйте")
+                                .font(.headline)
+                                .padding(.top)
+                            
+                            Text(cocktail.name)
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .multilineTextAlignment(.center)
+                            
+                            NavigationLink(destination: RecipeView(drinkId: cocktail.id)) {
+                                VStack(spacing: 20) {
+                                    CocktailCardView(cocktail: cocktail, imageHeight: 350)
+                                        .frame(width: 350)
+                                }
+                                .padding(.horizontal)
+                            }
+                            
+                            Button {
+                                viewModel.loadRandomCocktail()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "arrow.2.squarepath")
+                                    Text("Другой коктейль")
+                                }
+                                .padding()
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(10)
+                            }
+                        }
                     }
-                    .padding()
-                } else if let cocktail = cocktail {
-                    CocktailCardView(cocktail: cocktail)
-                        .padding()
                 } else {
-                    Text("Нажмите кнопку, чтобы получить случайный коктейль")
-                        .multilineTextAlignment(.center)
+                    Text("Не удалось загрузить случайный коктейль")
                         .padding()
-                        .foregroundColor(.gray)
                 }
-                
-                Spacer()
             }
-            .padding()
+            .navigationTitle("Случайный коктейль")
         }
-        .navigationTitle("Случайный коктейль")
     }
     
-    private func fetchRandomCocktail() {
-        isLoading = true
-        error = nil
-        
-        Task {
-            do {
-                let randomCocktail = try await apiService.fetchRandomCocktail()
-                
-                DispatchQueue.main.async {
-                    self.cocktail = randomCocktail
-                    self.isLoading = false
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.error = error
-                    self.isLoading = false
-                }
+    private var errorView: some View {
+        VStack {
+            Text("Ошибка загрузки")
+                .font(.headline)
+            
+            Text(viewModel.error?.localizedDescription ?? "Неизвестная ошибка")
+                .multilineTextAlignment(.center)
+                .padding()
+            
+            Button("Повторить") {
+                viewModel.loadRandomCocktail()
             }
+            .buttonStyle(.bordered)
         }
+        .padding()
     }
 }
 
