@@ -2,30 +2,26 @@ import SwiftUI
 import SDWebImageSwiftUI
 
 struct RecipeView: View {
-    let drinkId: String
-    @State private var cocktail: Cocktail?
-    @State private var isFavorite: Bool = false
-    @State var isLoading = false
-    @State var error: Error?
-    
-    @Environment(\.dismiss) var dismiss
-    
-    private let apiService = APIService.shared
-    private let favoritesService = FavoritesService.shared
+    @Environment(\.dismiss) private var dismiss
+    @StateObject var viewModel: RecipeViewModel
     
     init(drinkId: String = "11007") {
-        self.drinkId = drinkId
+        _viewModel = StateObject(wrappedValue: RecipeViewModel(drinkId: drinkId))
+    }
+    
+    init(cocktail: Cocktail) {
+        _viewModel = StateObject(wrappedValue: RecipeViewModel(cocktail: cocktail))
     }
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                if isLoading {
+                if viewModel.isLoading {
                     ProgressView("Загрузка...")
                         .padding()
-                } else if let error = error {
+                } else if let error = viewModel.error {
                     errorView
-                } else if let cocktail = cocktail {
+                } else if let cocktail = viewModel.cocktail {
                     VStack(spacing: 0) {
                         HStack(alignment: .top, spacing: 20) {
                             WebImage(url: URL(string: cocktail.thumbnail))
@@ -122,88 +118,31 @@ struct RecipeView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        isFavorite.toggle()
-                        if isFavorite {
-                            favoritesService.addToFavorites(cocktail!)
-                        } else {
-                            favoritesService.removeFromFavorites(cocktail!)
-                        }
+                        viewModel.toggleFavorite()
                     }) {
-                        Image(systemName: isFavorite ? "heart.fill" : "heart")
-                            .foregroundColor(isFavorite ? .red : .black)
+                        Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
+                            .foregroundColor(viewModel.isFavorite ? .red : .black)
                     }
                 }
             }
         }
-        .onAppear {
-            loadCocktailData()
-        }
     }
     
-    private var errorView: some View {
-        VStack(spacing: 20) {
-            Spacer()
+    var errorView: some View {
+        VStack {
+            Text("Ошибка загрузки")
+                .font(.headline)
             
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 70))
-                .foregroundColor(.orange)
+            Text(viewModel.error?.localizedDescription ?? "Неизвестная ошибка")
+                .multilineTextAlignment(.center)
                 .padding()
             
-            Text("Не получилось загрузить рецепт")
-                .font(.title2)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-            
-            Text("Проверьте подключение к интернету или попробуйте загрузить позже")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-            
-            Button {
-                retryLoadingCocktail()
-            } label: {
-                Text("Повторить запрос")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: 250)
-                    .background(Color.blue)
-                    .cornerRadius(10)
-                    .shadow(radius: 3)
+            Button("Повторить") {
+                viewModel.loadCocktailData()
             }
-            .padding(.top, 10)
-            
-            Spacer()
+            .buttonStyle(.bordered)
         }
         .padding()
-        .frame(maxWidth: .infinity)
-    }
-    
-    private func retryLoadingCocktail() {
-        loadCocktailData()
-    }
-    
-    func loadCocktailData() {
-        isLoading = true
-        error = nil
-        
-        Task {
-            do {
-                let loadedCocktail = try await apiService.fetchCocktailById(drinkId)
-                
-                DispatchQueue.main.async {
-                    self.cocktail = loadedCocktail
-                    self.isFavorite = favoritesService.isFavorite(loadedCocktail)
-                    self.isLoading = false
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.error = error
-                    self.isLoading = false
-                }
-            }
-        }
     }
 }
 
@@ -211,37 +150,42 @@ struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
-        return arrangeSubviews(sizes: sizes, proposal: proposal).size
+        return layout(proposal: proposal, subviews: subviews, cache: &cache).1
     }
     
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
-        let offsets = arrangeSubviews(sizes: sizes, proposal: proposal).offsets
-        
-        for (offset, subview) in zip(offsets, subviews) {
-            subview.place(at: CGPoint(x: bounds.minX + offset.x, y: bounds.minY + offset.y), proposal: .unspecified)
+        let offsets = layout(proposal: proposal, subviews: subviews, cache: &cache).0
+        for index in offsets.indices {
+            subviews[index].place(at: CGPoint(x: offsets[index].x + bounds.minX, y: offsets[index].y + bounds.minY), proposal: proposal)
         }
     }
     
-    private func arrangeSubviews(sizes: [CGSize], proposal: ProposedViewSize) -> (offsets: [CGPoint], size: CGSize) {
-        let maxWidth = proposal.width ?? .infinity
+    func layout(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> ([CGPoint], CGSize) {
+        guard !subviews.isEmpty else { return ([], .zero) }
+        let width = proposal.width ?? 0
+        var heights: [CGFloat] = [0]
         var offsets: [CGPoint] = []
-        var currentPosition = CGPoint.zero
-        var maxY: CGFloat = 0
+        var currentPosition: CGPoint = .zero
         
-        for size in sizes {
-            if currentPosition.x + size.width > maxWidth {
+        for subview in subviews {
+            let viewDimension = subview.sizeThatFits(.unspecified)
+            
+            if currentPosition.x + viewDimension.width > width && currentPosition.x > 0 {
                 currentPosition.x = 0
-                currentPosition.y = maxY + spacing
+                currentPosition.y += (heights.last ?? 0) + spacing
+                heights.append(0)
             }
             
             offsets.append(currentPosition)
-            currentPosition.x += size.width + spacing
-            maxY = max(maxY, currentPosition.y + size.height)
+            currentPosition.x += viewDimension.width + spacing
+            
+            if !heights.isEmpty {
+                heights[heights.count - 1] = max(heights.last ?? 0, viewDimension.height)
+            }
         }
         
-        return (offsets, CGSize(width: maxWidth, height: maxY))
+        let height = heights.reduce(0, +) + spacing * CGFloat(max(0, heights.count - 1))
+        return (offsets, CGSize(width: width, height: height))
     }
 }
 
@@ -269,8 +213,8 @@ struct RecipeView_ErrorPreview: View {
         let view = RecipeView(drinkId: "invalid_id")
         
         DispatchQueue.main.async {
-            view.error = NSError(domain: "CocktailFinder", code: 404, userInfo: [NSLocalizedDescriptionKey: "Коктейль не найден"])
-            view.isLoading = false
+            view.viewModel.error = NSError(domain: "CocktailFinder", code: 404, userInfo: [NSLocalizedDescriptionKey: "Коктейль не найден"])
+            view.viewModel.isLoading = false
         }
         
         return view
