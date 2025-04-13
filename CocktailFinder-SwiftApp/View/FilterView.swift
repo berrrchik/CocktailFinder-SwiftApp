@@ -164,7 +164,7 @@ struct ResultsSection: View {
                 .padding()
             } else if !filterManager.filteredCocktails.isEmpty {
                 ForEach(filterManager.filteredCocktails) { cocktail in
-                    NavigationLink(destination: RecipeView(drinkId: cocktail.id)) {
+                    NavigationLink(destination: RecipeView(cocktail: cocktail)) {
                         CocktailListItemView(
                             cocktail: cocktail,
                             filterTag: filterManager.selectedFilterName
@@ -206,33 +206,6 @@ struct CocktailListItemView: View {
             }
         }
         .padding(.vertical, 8)
-    }
-}
-
-class FilterViewModel: ObservableObject {
-    @Published var filterManager: FilterManager
-    private let apiService = APIService.shared
-    @Published var isLoading = false
-    @Published var error: Error?
-    
-    init() {
-        self.filterManager = FilterManager(categories: [])
-        print("FilterViewModel initialized")
-    }
-    
-    @MainActor
-    func loadFilterOptions() async {
-        isLoading = true
-        print("Starting to load filter options")
-        do {
-            let categories = try await apiService.fetchFilterOptions()
-            print("Received categories: \(categories)")
-            filterManager.categories = categories
-        } catch {
-            print("Error loading filter options: \(error)")
-            self.error = error
-        }
-        isLoading = false
     }
 }
 
