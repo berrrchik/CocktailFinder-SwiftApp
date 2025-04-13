@@ -13,7 +13,7 @@ struct ContentView: View {
             NavigationStack() {
                 SearchView()
             }
-            .searchable(text: $searchText, prompt: "Поиск коктейля")
+//            .searchable(text: $searchText, prompt: "Поиск коктейля")
             .tabItem {
                 Label("Поиск", systemImage: "magnifyingglass")
             }
