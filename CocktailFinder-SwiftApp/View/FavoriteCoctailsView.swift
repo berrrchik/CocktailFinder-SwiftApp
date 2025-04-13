@@ -1,38 +1,44 @@
 import SwiftUI
 
 struct FavoriteCoctailsView: View {
-    @State private var favorites: [Cocktail] = []
-    private let favoritesService = FavoritesService.shared
+    @StateObject private var viewModel = FavoritesViewModel()
     
     var body: some View {
         NavigationStack {
-            if favorites.isEmpty {
-                VStack(spacing: 20) {
-                    Text("Здесь будут ваши любимые коктейли")
-                        .font(.title3)
-                    Image(systemName: "heart.fill")
-                        .font(.title)
-                        .foregroundColor(.blue)
-                }
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 16)], spacing: 16) {
-                        ForEach(favorites) { cocktail in
-                            CocktailCardView(cocktail: cocktail)
-                        }
+            Group {
+                if viewModel.isFavoriteEmpty() {
+                    VStack(spacing: 20) {
+                        Spacer()
+                        
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 70))
+                            .foregroundColor(.blue)
+                        
+                        Text("Здесь будут ваши любимые коктейли")
+                            .font(.title2)
+                            .multilineTextAlignment(.center)
+                            .padding()
+                        
+                        Spacer()
                     }
-                    .padding()
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                            ForEach(viewModel.favorites) { cocktail in
+                                NavigationLink(destination: RecipeView(drinkId: cocktail.id)) {
+                                    CocktailCardView(cocktail: cocktail)
+                                }
+                            }
+                        }
+                        .padding()
+                    }
                 }
             }
+            .navigationTitle("Избранное")
+            .onAppear {
+                viewModel.loadFavorites()
+            }
         }
-        .navigationTitle("Избранное")
-        .onAppear {
-            loadFavorites()
-        }
-    }
-    
-    private func loadFavorites() {
-        favorites = favoritesService.getFavorites()
     }
 }
 
