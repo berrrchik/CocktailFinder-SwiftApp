@@ -2,38 +2,68 @@ import SwiftUI
 import SDWebImageSwiftUI
 
 struct CocktailCardView: View {
-    let cocktail: Cocktail
+    @StateObject private var viewModel: CocktailCardViewModel
+    let imageHeight: CGFloat
+    
+    init(cocktail: Cocktail, imageHeight: CGFloat = 170) {
+        _viewModel = StateObject(wrappedValue: CocktailCardViewModel(cocktail: cocktail))
+        self.imageHeight = imageHeight
+    }
     
     var body: some View {
-        VStack(spacing: 8) {
-            WebImage(url: URL(string: cocktail.thumbnail))
-                .resizable()
-                .indicator(.activity)
-                .transition(.fade(duration: 0.5))
-                .scaledToFill()
-                .frame(width: 160, height: 160)
-                .clipped()
-                .cornerRadius(4)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            
-            Text(cocktail.name)
-                .font(.system(size: 22, weight: .medium))
-                .lineLimit(1)
-                .frame(width: 160, alignment: .center)
-            
-            NavigationLink(destination: RecipeView(drinkId: cocktail.id)) {
-                Text("Рецепт")
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(width: 150, height: 36)
-                    .foregroundColor(.white)
-                    .background(Color.orange)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+        VStack(alignment: .leading) {
+            ZStack(alignment: .topTrailing) {
+                WebImage(url: URL(string: viewModel.cocktail.thumbnail))
+                    .resizable()
+                    .indicator(.activity)
+                    .transition(.fade(duration: 0.5))
+                    .scaledToFill()
+                    .frame(height: imageHeight)
+                    .clipped()
+                
+                Button(action: {
+                    viewModel.toggleFavorite()
+                }) {
+                    Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
+                        .foregroundColor(viewModel.isFavorite ? .red : .white)
+                        .padding(8)
+                        .background(Circle().fill(Color.black.opacity(0.5)))
+                        .shadow(radius: 2)
+                }
+                .padding(8)
             }
-            .buttonStyle(PlainButtonStyle())
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(viewModel.cocktail.name)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .foregroundStyle(.black)
+                
+                HStack {
+                    Text(viewModel.cocktail.alcoholic)
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(10)
+                        .foregroundStyle(.black)
+                    
+                    Spacer()
+                    
+                    Text(viewModel.cocktail.category)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(8)
         }
-        .padding(10)
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(15)
+        .background(Color.white)
+        .cornerRadius(10)
+        .shadow(radius: 2)
+        .onAppear {
+            viewModel.checkIsFavorite()
+        }
     }
 }
 
@@ -100,4 +130,3 @@ struct CocktailCardPreview: View {
         }
     }
 }
-
