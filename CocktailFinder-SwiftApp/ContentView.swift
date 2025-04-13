@@ -13,24 +13,23 @@ struct ContentView: View {
             NavigationStack() {
                 SearchView()
             }
-//            .searchable(text: $searchText, prompt: "Поиск коктейля")
             .tabItem {
                 Label("Поиск", systemImage: "magnifyingglass")
             }
             .tag(0)
+            NavigationStack() {
+                FavoriteCoctailsView()
+            }
+            .tabItem {
+                Label("Избранное", systemImage: "heart")
+            }
+            .tag(1)
             NavigationStack() {
                 FilterView()
                     .navigationTitle("Cocktail Finder")
             }
             .tabItem {
                 Label("Категории", systemImage: "checklist")
-            }
-            .tag(1)
-            NavigationStack() {
-                FavoriteCoctailsView()
-            }
-            .tabItem {
-                Label("Избранное", systemImage: "heart")
             }
             .tag(2)
             NavigationStack() {
