@@ -18,7 +18,11 @@ class APIService: CocktailServiceProtocol {
     private let requestDelay: UInt64 = 200 * 1_000_000
     private let maxRetries = 1
     
-    private var cocktailCache = NSCache<NSString, CacheEntry>()
+    private var categoryCache = NSCache<NSString, CacheEntry>()
+    private var glassCache = NSCache<NSString, CacheEntry>()
+    private var ingredientCache = NSCache<NSString, CacheEntry>()
+    private var alcoholicCache = NSCache<NSString, CacheEntry>()
+    private var individualCocktailCache = NSCache<NSString, CacheEntry>()
     
     private init() {
         print("APIService initialized")
@@ -31,7 +35,24 @@ class APIService: CocktailServiceProtocol {
         
         session = URLSession(configuration: configuration)
         
-        cocktailCache.countLimit = 100
+        categoryCache.countLimit = 50
+        glassCache.countLimit = 50
+        ingredientCache.countLimit = 50
+        alcoholicCache.countLimit = 50
+        individualCocktailCache.countLimit = 200
+    }
+    
+    private func getCache(for type: FilterType) -> NSCache<NSString, CacheEntry> {
+        switch type {
+        case .category:
+            return categoryCache
+        case .glass:
+            return glassCache
+        case .ingredient:
+            return ingredientCache
+        case .alcoholic:
+            return alcoholicCache
+        }
     }
     
     func fetchCocktailByName(_ name: String) async throws -> [Cocktail] {
@@ -46,7 +67,7 @@ class APIService: CocktailServiceProtocol {
         try Task.checkCancellation()
         
         let cacheKey = NSString(string: "cocktail_\(id)")
-        if let cachedData = cocktailCache.object(forKey: cacheKey), !cachedData.isExpired() {
+        if let cachedData = individualCocktailCache.object(forKey: cacheKey), !cachedData.isExpired() {
             if let cocktail = cachedData.cocktails.first {
                 return cocktail
             }
@@ -71,7 +92,7 @@ class APIService: CocktailServiceProtocol {
             }
             
             let cacheEntry = CacheEntry(cocktails: [cocktail])
-            cocktailCache.setObject(cacheEntry, forKey: cacheKey)
+            individualCocktailCache.setObject(cacheEntry, forKey: cacheKey)
             
             return cocktail
         } catch is CancellationError {
@@ -104,9 +125,11 @@ class APIService: CocktailServiceProtocol {
     func fetchCocktailsByFilter(type: FilterType, value: String) async throws -> [Cocktail] {
         try Task.checkCancellation()
         
-        let cacheKey = NSString(string: "filter_\(type)_\(value)")
-        if let cachedData = cocktailCache.object(forKey: cacheKey), !cachedData.isExpired() {
-            print("Загружено из кеша: \(cacheKey)")
+        let cache = getCache(for: type)
+        let cacheKey = NSString(string: value)
+        
+        if let cachedData = cache.object(forKey: cacheKey), !cachedData.isExpired() {
+            print("Загружено из кеша: \(type) - \(value)")
             return cachedData.cocktails
         }
         
@@ -187,7 +210,7 @@ class APIService: CocktailServiceProtocol {
                 try Task.checkCancellation()
                 
                 let cacheEntry = CacheEntry(cocktails: fullCocktails)
-                cocktailCache.setObject(cacheEntry, forKey: cacheKey)
+                cache.setObject(cacheEntry, forKey: cacheKey)
                 
                 Task { @MainActor in
                     NotificationCenter.default.post(
