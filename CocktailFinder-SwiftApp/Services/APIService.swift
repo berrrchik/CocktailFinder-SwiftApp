@@ -12,9 +12,26 @@ class APIService: CocktailServiceProtocol {
     static let shared = APIService()
     private let baseURL = "https://www.thecocktaildb.com/api/json/v1/1"
     private let decoder = JSONDecoder()
+    private let session: URLSession
+    
+    private let maxConcurrentRequests = 5
+    private let requestDelay: UInt64 = 200 * 1_000_000
+    private let maxRetries = 1
+    
+    private var cocktailCache = NSCache<NSString, CacheEntry>()
     
     private init() {
         print("APIService initialized")
+        
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 10
+        configuration.waitsForConnectivity = false
+        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        configuration.urlCache = URLCache(memoryCapacity: 10 * 1024 * 1024, diskCapacity: 50 * 1024 * 1024, diskPath: nil)
+        
+        session = URLSession(configuration: configuration)
+        
+        cocktailCache.countLimit = 100
     }
     
     func fetchCocktailByName(_ name: String) async throws -> [Cocktail] {
@@ -26,22 +43,43 @@ class APIService: CocktailServiceProtocol {
     }
     
     func fetchCocktailById(_ id: String) async throws -> Cocktail {
+        try Task.checkCancellation()
+        
+        let cacheKey = NSString(string: "cocktail_\(id)")
+        if let cachedData = cocktailCache.object(forKey: cacheKey), !cachedData.isExpired() {
+            if let cocktail = cachedData.cocktails.first {
+                return cocktail
+            }
+        }
+        
         let url = URL(string: "\(baseURL)/lookup.php?i=\(id)")!
         
-        let (data, response) = try await URLSession.shared.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.invalidResponse
+        do {
+            let (data, response) = try await session.data(from: url)
+            
+            try Task.checkCancellation()
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                throw APIError.invalidResponse
+            }
+            
+            let cocktailResponse = try decoder.decode(CocktailResponse.self, from: data)
+            
+            guard let cocktail = cocktailResponse.drinks.first else {
+                throw APIError.decodingFailed
+            }
+            
+            let cacheEntry = CacheEntry(cocktails: [cocktail])
+            cocktailCache.setObject(cacheEntry, forKey: cacheKey)
+            
+            return cocktail
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            print("Ошибка при загрузке коктейля \(id): \(error)")
+            throw error
         }
-        
-        let cocktailResponse = try decoder.decode(CocktailResponse.self, from: data)
-        
-        guard let cocktail = cocktailResponse.drinks.first else {
-            throw APIError.decodingFailed
-        }
-        
-        return cocktail
     }
     
     func fetchRandomCocktail() async throws -> Cocktail {
@@ -64,6 +102,14 @@ class APIService: CocktailServiceProtocol {
     }
     
     func fetchCocktailsByFilter(type: FilterType, value: String) async throws -> [Cocktail] {
+        try Task.checkCancellation()
+        
+        let cacheKey = NSString(string: "filter_\(type)_\(value)")
+        if let cachedData = cocktailCache.object(forKey: cacheKey), !cachedData.isExpired() {
+            print("Загружено из кеша: \(cacheKey)")
+            return cachedData.cocktails
+        }
+        
         let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let endpoint: String
         
@@ -81,30 +127,114 @@ class APIService: CocktailServiceProtocol {
         let url = URL(string: "\(baseURL)/\(endpoint)")!
         print("Fetching cocktails with filter: \(endpoint)")
         
-        let (data, response) = try await URLSession.shared.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
-        
-        // Сначала декодируем ответ в FilteredCocktailResponse
-        let filteredResponse = try decoder.decode(FilteredCocktailResponse.self, from: data)
-        
-        // Затем для каждого коктейля из фильтрованного ответа получаем полные данные
-        var fullCocktails: [Cocktail] = []
-        
-        for filteredCocktail in filteredResponse.drinks {
+        do {
+            try Task.checkCancellation()
+            
+            let (data, response) = try await session.data(from: url)
+            
+            try Task.checkCancellation()
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                throw APIError.invalidResponse
+            }
+            
+            try Task.checkCancellation()
+            
             do {
-                let fullCocktail = try await fetchCocktailById(filteredCocktail.id)
-                fullCocktails.append(fullCocktail)
+                let filteredResponse = try decoder.decode(FilteredCocktailResponse.self, from: data)
+                let totalCount = filteredResponse.drinks.count
+                
+                Task { @MainActor in
+                    NotificationCenter.default.post(
+                        name: Notification.Name("CocktailLoadingProgress"),
+                        object: nil,
+                        userInfo: ["progress": "Загрузка \(totalCount) коктейлей..."]
+                    )
+                }
+                
+                var fullCocktails: [Cocktail] = []
+                fullCocktails.reserveCapacity(totalCount)
+                
+                for i in 0..<totalCount {
+                    if i % maxConcurrentRequests == 0 {
+                        try Task.checkCancellation()
+                        
+                        if i > 0 {
+                            try await Task.sleep(nanoseconds: requestDelay)
+                        }
+                        
+                        Task { @MainActor in
+                            NotificationCenter.default.post(
+                                name: Notification.Name("CocktailLoadingProgress"),
+                                object: nil,
+                                userInfo: ["progress": "Загружено \(i) из \(totalCount) коктейлей..."]
+                            )
+                        }
+                    }
+                    
+                    let filteredCocktail = filteredResponse.drinks[i]
+                    do {
+                        let cocktail = try await fetchCocktailById(filteredCocktail.id)
+                        fullCocktails.append(cocktail)
+                    } catch is CancellationError {
+                        throw CancellationError()
+                    } catch {
+                        print("Ошибка при загрузке коктейля \(filteredCocktail.id): \(error)")
+                    }
+                }
+                
+                try Task.checkCancellation()
+                
+                let cacheEntry = CacheEntry(cocktails: fullCocktails)
+                cocktailCache.setObject(cacheEntry, forKey: cacheKey)
+                
+                Task { @MainActor in
+                    NotificationCenter.default.post(
+                        name: Notification.Name("CocktailLoadingComplete"),
+                        object: nil,
+                        userInfo: ["type": type, "value": value, "count": fullCocktails.count]
+                    )
+                }
+                
+                return fullCocktails
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
-                print("Ошибка при загрузке полных данных для коктейля \(filteredCocktail.id): \(error)")
-                continue
+                print("Ошибка декодирования: \(error)")
+                throw APIError.decodingFailed
+            }
+        } catch is CancellationError {
+            print("Запрос был отменен")
+            throw CancellationError()
+        } catch {
+            print("Ошибка сети: \(error)")
+            throw error
+        }
+    }
+    
+    private func fetchCocktailByIdWithRetry(_ id: String, retries: Int) async throws -> Cocktail {
+        var currentRetry = 0
+        
+        while true {
+            do {
+                if currentRetry > 0 {
+                    let randomDelay = UInt64.random(in: 100...300) * 1_000_000
+                    try await Task.sleep(nanoseconds: randomDelay)
+                }
+                
+                return try await fetchCocktailById(id)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                if currentRetry >= retries {
+                    throw error
+                }
+                
+                currentRetry += 1
+                print("Повторная попытка \(currentRetry)/\(retries) для коктейля \(id)")
             }
         }
-        
-        return fullCocktails
     }
     
     func fetchFilterOptions() async throws -> [FilterCategory] {
@@ -222,4 +352,19 @@ enum APIError: Error {
     case invalidURL
     case invalidResponse
     case decodingFailed
+}
+
+class CacheEntry {
+    let cocktails: [Cocktail]
+    private let timestamp: Date
+    private let lifespan: TimeInterval = 60 * 30 
+    
+    init(cocktails: [Cocktail]) {
+        self.cocktails = cocktails
+        self.timestamp = Date()
+    }
+    
+    func isExpired() -> Bool {
+        return Date().timeIntervalSince(timestamp) > lifespan
+    }
 }
