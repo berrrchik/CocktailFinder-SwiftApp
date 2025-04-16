@@ -16,19 +16,20 @@ class SearchViewModel: ObservableObject {
     private let cacheExpirationTime: TimeInterval = 24 * 60 * 60
     
     init() {
-        $searchText
-            .debounce(for: .seconds(0.1), scheduler: RunLoop.main)
-            .removeDuplicates()
-            .sink { [weak self] searchTerm in
-                if !searchTerm.isEmpty {
-                    self?.searchCocktails(by: searchTerm)
-                } else {
-                    self?.searchResults = []
-                }
-            }
-            .store(in: &cancellables)
-        
         loadPopularCocktails()
+    }
+    
+    func performSearch() {
+        guard !searchText.isEmpty else {
+            searchResults = []
+            return
+        }
+        searchCocktails(by: searchText)
+    }
+    
+    func clearSearchResults() {
+        searchResults = []
+        error = nil
     }
     
     func searchCocktails(by name: String) {

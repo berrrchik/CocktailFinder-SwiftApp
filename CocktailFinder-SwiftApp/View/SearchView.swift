@@ -5,23 +5,36 @@ struct SearchView: View {
     
     var body: some View {
         NavigationStack {
-            VStack {
-                SearchBar(text: $viewModel.searchText)
-                    .padding(.horizontal)
+            VStack(spacing: 0) {
+                SearchBar(text: $viewModel.searchText, onSearch: {
+                    viewModel.performSearch()
+                }, onClear: {
+                    viewModel.clearSearchResults()
+                })
+                .padding(.horizontal)
+                .padding(.vertical, 8)
                 
-                if viewModel.isLoading {
-                    ProgressView("Загрузка...")
-                        .padding()
-                } else if let error = viewModel.error {
-                    Text("Ошибка: \(error.localizedDescription)")
-                        .foregroundColor(.red)
-                        .padding()
-                } else if !viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
-                    Text("Не найдено коктейлей")
-                        .padding()
-                    Spacer()
-                } else {
-                    content
+                ZStack(alignment: .top) {
+                    if viewModel.isLoading {
+                        ProgressView("Загрузка...")
+                            .padding()
+                    } else if let error = viewModel.error {
+                        Text("Ошибка: \(error.localizedDescription)")
+                            .foregroundColor(.red)
+                            .padding()
+                    }
+                    
+                    ScrollView {
+                        VStack {
+                            if !viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty && !viewModel.isLoading {
+                                Text("Не найдено коктейлей")
+                                    .padding()
+                            } else {
+                                content
+                            }
+                        }
+                        .opacity(viewModel.isLoading ? 0.3 : 1.0)
+                    }
                 }
             }
             .navigationTitle("Поиск коктейлей")
@@ -29,7 +42,7 @@ struct SearchView: View {
     }
     
     private var content: some View {
-        ScrollView {
+        VStack {
             if !viewModel.searchText.isEmpty {
                 resultsGrid(cocktails: viewModel.searchResults)
             } else {
@@ -64,6 +77,8 @@ struct SearchView: View {
 
 struct SearchBar: View {
     @Binding var text: String
+    var onSearch: () -> Void
+    var onClear: () -> Void
     
     var body: some View {
         HStack {
@@ -82,6 +97,7 @@ struct SearchBar: View {
                         if !text.isEmpty {
                             Button(action: {
                                 self.text = ""
+                                onClear()
                             }) {
                                 Image(systemName: "multiply.circle.fill")
                                     .foregroundColor(.gray)
@@ -90,6 +106,15 @@ struct SearchBar: View {
                         }
                     }
                 )
+            
+            Button(action: onSearch) {
+                Text("Поиск")
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            }
         }
     }
 }
