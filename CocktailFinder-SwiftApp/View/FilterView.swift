@@ -3,66 +3,47 @@ import SDWebImageSwiftUI
 
 class FilterManager: ObservableObject {
     let drinkId: String
-    private let apiService = APIService.shared
     
     @Published var categories: [FilterCategory]
     @Published var filteredCocktails: [Cocktail] = []
     @Published var isLoading = false
+    @Published var loadingProgress: String = ""
     @Published var error: Error?
     @Published var selectedFilterName: String = ""
+    @Published var useCache: Bool = true
+    
+    weak var viewModel: FilterViewModel?
+    
+    private var currentTask: Task<Void, Never>?
+    
+    static let shared = FilterManager(categories: [])
     
     init(categories: [FilterCategory], drinkId: String = "11007") {
         self.categories = categories
         self.drinkId = drinkId
+        
+        print("FilterManager инициализирован: кеширование \(useCache ? "включено" : "выключено")")
+    }
+    
+    deinit {
+        cancelLoading()
     }
     
     func selectOption(_ optionID: UUID) {
-        resetAllSelections()
-        
-        for categoryIndex in categories.indices {
-            if let index = categories[categoryIndex].options.firstIndex(where: { $0.id == optionID }) {
-                categories[categoryIndex].options[index].isSelected = true
-                selectedFilterName = categories[categoryIndex].options[index].name
-                loadFilteredCocktails(type: categories[categoryIndex].type, value: categories[categoryIndex].options[index].name)
-                break
-            }
+        if let viewModel = viewModel {
+            viewModel.selectFilterOption(optionID)
         }
     }
     
-    private func resetAllSelections() {
-        for categoryIndex in categories.indices {
-            for i in categories[categoryIndex].options.indices {
-                categories[categoryIndex].options[i].isSelected = false
-            }
-        }
+    func cancelLoading() {
+        currentTask?.cancel()
+        currentTask = nil
+        
+        viewModel?.cancelLoading()
     }
     
-    func loadFilteredCocktails(type: FilterType, value: String) {
-        isLoading = true
-        error = nil
-        filteredCocktails = []
-        
-        Task {
-            do {
-                print("Загрузка коктейлей с фильтром: тип=\(type), значение=\(value)")
-                let results = try await apiService.fetchCocktailsByFilter(type: type, value: value)
-                print("Загружено коктейлей: \(results.count)")
-                
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.filteredCocktails = results
-                    self.isLoading = false
-                    print("Обновлены filteredCocktails, количество: \(self.filteredCocktails.count)")
-                }
-            } catch {
-                print("Ошибка при загрузке коктейлей: \(error)")
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.error = error
-                    self.isLoading = false
-                }
-            }
-        }
+    func retryLastRequest() {
+        viewModel?.retryLastRequest()
     }
 }
 
@@ -103,7 +84,7 @@ struct FilterView: View {
                                                 FilterOptionRow(
                                                     option: option,
                                                     action: {
-                                                        viewModel.filterManager.selectOption(option.id)
+                                                        viewModel.selectFilterOption(option.id)
                                                     }
                                                 )
                                             }
@@ -117,7 +98,7 @@ struct FilterView: View {
                             }
                             
                             Section {
-                                ResultsSection(filterManager: viewModel.filterManager)
+                                ResultsSection(filterManager: viewModel.filterManager, viewModel: viewModel)
                             }
                         }
                         .listStyle(.insetGrouped)
@@ -127,17 +108,34 @@ struct FilterView: View {
             .navigationTitle("Фильтр коктейлей")
         }
         .task {
-            await viewModel.loadFilterOptions()
+            if viewModel.filterManager.categories.isEmpty {
+                await viewModel.loadFilterOptions()
+            }
+        }
+        .onDisappear {
+            viewModel.cancelLoading()
         }
     }
 }
 
 struct ResultsSection: View {
     @ObservedObject var filterManager: FilterManager
+    let viewModel: FilterViewModel
     
     var body: some View {
         Group {
-            if !filterManager.selectedFilterName.isEmpty {
+            contentView
+        }
+        .headerProminence(.increased)
+        .onDisappear {
+            viewModel.cancelLoading()
+        }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if !filterManager.selectedFilterName.isEmpty {
+            VStack(spacing: 0) {
                 HStack {
                     Text("Результаты для \"\(filterManager.selectedFilterName)\"")
                         .font(.headline)
@@ -149,34 +147,54 @@ struct ResultsSection: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
-            if filterManager.isLoading {
+        }
+        
+        if filterManager.isLoading {
+            VStack(spacing: 10) {
                 ProgressView("Загрузка коктейлей...")
                     .frame(maxWidth: .infinity)
-            } else if let error = filterManager.error {
-                VStack {
-                    Text("Ошибка загрузки коктейлей")
-                        .font(.headline)
-                    Text(error.localizedDescription)
-                        .font(.subheadline)
-                        .foregroundColor(.red)
-                }
-                .padding()
-            } else if !filterManager.filteredCocktails.isEmpty {
-                ForEach(filterManager.filteredCocktails) { cocktail in
-                    NavigationLink(destination: RecipeView(cocktail: cocktail)) {
-                        CocktailListItemView(
-                            cocktail: cocktail,
-                            filterTag: filterManager.selectedFilterName
-                        )
-                    }
+                
+                if !filterManager.loadingProgress.isEmpty {
+                    Text(filterManager.loadingProgress)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
+            .padding(.vertical)
+        } else if let error = filterManager.error {
+            VStack {
+                Text("Ошибка загрузки коктейлей")
+                    .font(.headline)
+                Text(error.localizedDescription)
+                    .font(.subheadline)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                Button("Повторить") {
+                    retryLoading()
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+        } else if !filterManager.filteredCocktails.isEmpty {
+            ForEach(filterManager.filteredCocktails) { cocktail in
+                NavigationLink(destination: RecipeView(cocktail: cocktail)) {
+                    CocktailListItemView(
+                        cocktail: cocktail,
+                        filterTag: filterManager.selectedFilterName
+                    )
+                }
+            }
+        } else if !filterManager.selectedFilterName.isEmpty && !filterManager.isLoading {
+            Text("Нет коктейлей для выбранного фильтра")
+                .foregroundColor(.secondary)
+                .padding()
         }
-        .headerProminence(.increased)
+    }
+    
+    private func retryLoading() {
+        viewModel.retryLastRequest()
     }
 }
-
 
 struct CocktailListItemView: View {
     let cocktail: Cocktail
