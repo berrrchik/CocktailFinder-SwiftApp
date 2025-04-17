@@ -78,13 +78,22 @@ CocktailFinder-SwiftApp/
 │   ├── FilterView.swift
 │   ├── CocktailCardView.swift
 │   └── RandomCocktailView.swift
+├── ViewModel/
+│   ├── SearchViewModel.swift
+│   ├── FilterViewModel.swift
+│   ├── RecipeViewModel.swift
+│   ├── RandomCocktailViewModel.swift
+│   ├── CocktailCardViewModel.swift
+│   └── FavoritesViewModel.swift
 ├── Model/
 │   ├── Cocktail.swift
 │   ├── FilterCategory.swift
 │   └── FilterOption.swift
-└── Services/
-    ├── APIService.swift
-    └── FavoritesService.swift
+├── Services/
+│   ├── APIService.swift
+│   └── FavoritesService.swift
+├── ContentView.swift
+└── CocktailFinder_SwiftAppApp.swift
 ```
 
 ## Установка и запуск
