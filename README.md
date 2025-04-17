@@ -15,6 +15,18 @@ CocktailFinder - это современное iOS приложение, кот�
 - 📱 Офлайн доступ к сохраненным коктейлям
 - 🔄 Кэширование популярных коктейлей
 
+## Скриншоты приложения
+
+<p align="center">
+   <img src="https://github.com/user-attachments/assets/80227092-f072-4396-a252-1c0f231fb05d" alt="Экран поиска с популярными коктейлями" width="32%" />
+   <img src="https://github.com/user-attachments/assets/da70cbef-f5e4-4462-b503-79451f3f6fbc" alt="Экран поиска" width="32%" />
+  <img src="https://github.com/user-attachments/assets/a55a02ea-c0ca-4f5e-886c-fdd5845d9110" alt="Экран рецепта" width="32%">
+   <img src="https://github.com/user-attachments/assets/bf8b5907-3b83-4a3a-b6f4-8e6fd9e3c429" alt="Экран любимых коктейлей" width="32%" />
+   <img src="https://github.com/user-attachments/assets/3a7fc44b-9e34-4782-b10e-737e3af9ef92" alt="Экран коктейлей по фильтрам" width="32%" />
+   <img src="https://github.com/user-attachments/assets/78b2c17a-805f-4415-9fce-ce1e5d4ec5ea" alt="Экран случанойго коктейля" width="32%" />
+</p>
+
+
 ## Пользовательский интерфейс
 
 ### Основные экраны
