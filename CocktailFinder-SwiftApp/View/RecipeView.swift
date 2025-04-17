@@ -3,6 +3,7 @@ import SDWebImageSwiftUI
 
 struct RecipeView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject var viewModel: RecipeViewModel
     
     init(drinkId: String = "11007") {
@@ -63,45 +64,39 @@ struct RecipeView: View {
                         }
                         .padding()
                         
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Ингредиенты: \(cocktail.ingredients.count)")
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("ИНГРЕДИЕНТЫ")
                                 .font(.headline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.gray)
                                 .padding(.horizontal)
                             
-                            VStack(alignment: .leading, spacing: 5) {
-                                ForEach(Array(cocktail.ingredients.enumerated()), id: \.element) { index, ingredient in
-                                    HStack {
-                                        Text("\(index + 1).")
-                                        Text(ingredient.name)
-                                        Spacer()
-                                        Text(ingredient.measure)
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
+                            ingredientsCard(ingredients: cocktail.ingredients)
+                                .padding(.horizontal)
                         }
                         .padding(.vertical)
                         
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Инструкция")
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("ИНСТРУКЦИЯ")
                                 .font(.headline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.gray)
                                 .padding(.horizontal)
                             
-                            Text("Сервировка: \(cocktail.glass)")
+                            servedInCard(glass: cocktail.glass)
                                 .padding(.horizontal)
                             
-                            Text(cocktail.instructions)
+                            instructionsCard(instructions: cocktail.instructions)
                                 .padding(.horizontal)
-                                .padding(.top, 5)
-                            
                         }
-                        .padding(.vertical)
+                        .padding(.bottom, 30)
                     }
                 } else {
                     Text("Нет данных о коктейле")
                         .padding()
                 }
             }
+            .background(backgroundColor)
             .navigationTitle("Рецепт")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -126,6 +121,73 @@ struct RecipeView: View {
                 }
             }
         }
+    }
+    
+    var backgroundColor: Color {
+        colorScheme == .dark ? Color.black : Color(UIColor.systemBackground)
+    }
+    
+    var cardBackgroundColor: Color {
+        colorScheme == .dark ? Color(UIColor.systemGray6) : Color.white
+    }
+    
+    func ingredientsCard(ingredients: [Cocktail.Ingredient]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array(ingredients.enumerated()), id: \.element) { index, ingredient in
+                HStack {
+                    Text("\(index + 1).")
+                        .font(.body)
+                    Text(ingredient.name)
+                        .font(.body)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Text(ingredient.measure)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackgroundColor)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+    }
+    
+    func servedInCard(glass: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("СЕРВИРОВКА")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.gray)
+            
+            Text(glass)
+                .font(.title3)
+                .fontWeight(.bold)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackgroundColor)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+    }
+    
+    func instructionsCard(instructions: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("ПРИГОТОВЛЕНИЕ")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.gray)
+            
+            Text(instructions)
+                .font(.body)
+                .lineSpacing(6)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardBackgroundColor)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
     }
     
     var errorView: some View {
