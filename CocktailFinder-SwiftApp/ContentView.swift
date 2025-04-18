@@ -18,18 +18,18 @@ struct ContentView: View {
             }
             .tag(0)
             NavigationStack() {
-                FavoriteCoctailsView()
-            }
-            .tabItem {
-                Label("Избранное", systemImage: "heart")
-            }
-            .tag(1)
-            NavigationStack() {
                 FilterView()
                     .navigationTitle("Cocktail Finder")
             }
             .tabItem {
                 Label("Категории", systemImage: "checklist")
+            }
+            .tag(1)
+            NavigationStack() {
+                FavoriteCoctailsView()
+            }
+            .tabItem {
+                Label("Избранное", systemImage: "heart")
             }
             .tag(2)
             NavigationStack() {
