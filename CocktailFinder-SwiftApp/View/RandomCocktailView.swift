@@ -34,13 +34,17 @@ struct RandomCocktailView: View {
                             Button {
                                 viewModel.loadRandomCocktail()
                             } label: {
-                                HStack {
-                                    Image(systemName: "arrow.2.squarepath")
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 16, weight: .medium))
                                     Text("Другой коктейль")
+                                        .font(.system(size: 16, weight: .medium))
                                 }
-                                .padding()
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(10)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(Color.blue)
+                                .cornerRadius(12)
                             }
                         }
                     }
