@@ -7,6 +7,8 @@ class SearchViewModel: ObservableObject {
     @Published var searchResults: [Cocktail] = []
     @Published var isLoading: Bool = false
     @Published var error: Error? = nil
+    @Published var hasSearched: Bool = false
+    @Published var isSearchBarFocused: Bool = false
     
     private let apiService = APIService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -22,13 +24,16 @@ class SearchViewModel: ObservableObject {
     func performSearch() {
         guard !searchText.isEmpty else {
             searchResults = []
+            hasSearched = false
             return
         }
+        hasSearched = true
         searchCocktails(by: searchText)
     }
     
     func clearSearchResults() {
         searchResults = []
+        hasSearched = false
         error = nil
     }
     
