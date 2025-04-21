@@ -19,13 +19,25 @@ struct SearchView: View {
                 ScrollView {
                     VStack {
                         if viewModel.isLoading {
-                            LoadingView()
+                            StateView(
+                                iconName: "hourglass.circle",
+                                title: "Идёт поиск",
+                                description: "Пожалуйста, подождите"
+                            )
                         } else if !viewModel.isSearchBarFocused && !viewModel.hasSearched {
                             popularCocktailsView
                         } else if !viewModel.hasSearched {
-                            EmptySearchView()
+                            StateView(
+                                iconName: "wineglass",
+                                title: "Найдите свой коктейль",
+                                description: "Введите название коктейля в поисковую строку"
+                            )
                         } else if viewModel.searchResults.isEmpty || viewModel.error != nil {
-                            NotFoundView()
+                            StateView(
+                                iconName: "magnifyingglass.circle",
+                                title: "Коктейль не найден",
+                                description: "Попробуйте изменить параметры поиска или поищите другой коктейль"
+                            )
                         } else {
                             resultsGrid(cocktails: viewModel.searchResults)
                         }
@@ -110,72 +122,6 @@ struct SearchBar: View {
                     .cornerRadius(8)
             }
         }
-    }
-}
-
-struct LoadingView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "hourglass.circle")
-                .font(.system(size: 70))
-                .foregroundColor(.gray)
-            
-            Text("Идёт поиск")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Пожалуйста, подождите")
-                .font(.body)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, 60)
-    }
-}
-
-struct EmptySearchView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "wineglass")
-                .font(.system(size: 70))
-                .foregroundColor(.gray)
-            
-            Text("Найдите свой коктейль")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Введите название коктейля в поисковую строку")
-                .font(.body)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, 60)
-    }
-}
-
-struct NotFoundView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "magnifyingglass.circle")
-                .font(.system(size: 70))
-                .foregroundColor(.gray)
-            
-            Text("Коктейль не найден")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Попробуйте изменить параметры поиска или поищите другой коктейль")
-                .font(.body)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, 60)
     }
 }
 
