@@ -9,33 +9,36 @@ struct ContentView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            TabView(selection: $selectedTab) {
+        TabView(selection: $selectedTab) {
+            NavigationStack() {
                 SearchView()
-                    .tabItem {
-                        Label("Поиск", systemImage: "magnifyingglass")
-                    }
-                    .tag(0)
-                
+            }
+            .tabItem {
+                Label("Поиск", systemImage: "magnifyingglass")
+            }
+            .tag(0)
+            NavigationStack() {
                 FilterView()
                     .navigationTitle("Cocktail Finder")
-                    .tabItem {
-                        Label("Категории", systemImage: "checklist")
-                    }
-                    .tag(1)
-                
-                FavoriteCoctailsView()
-                    .tabItem {
-                        Label("Избранное", systemImage: "heart")
-                    }
-                    .tag(2)
-                
-                RandomCocktailView()
-                    .tabItem {
-                        Label("Рандом", systemImage: "dice")
-                    }
-                    .tag(3)
             }
+            .tabItem {
+                Label("Категории", systemImage: "checklist")
+            }
+            .tag(1)
+            NavigationStack() {
+                FavoriteCoctailsView()
+            }
+            .tabItem {
+                Label("Избранное", systemImage: "heart")
+            }
+            .tag(2)
+            NavigationStack() {
+                RandomCocktailView()
+            }
+            .tabItem {
+                Label("Рандом", systemImage: "dice")
+            }
+            .tag(3)
         }
     }
 }
