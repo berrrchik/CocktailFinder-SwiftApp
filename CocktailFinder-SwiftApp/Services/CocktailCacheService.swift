@@ -1,6 +1,13 @@
 import Foundation
 
-class CocktailCacheService {
+protocol CocktailCacheServiceProtocol {
+    func cachePopularCocktails(_ cocktails: [Cocktail])
+    func getCachedPopularCocktails() -> [Cocktail]?
+    func isCacheValid() -> Bool
+    func clearCache()
+}
+
+class CocktailCacheService: CocktailCacheServiceProtocol {
     static let shared = CocktailCacheService()
     
     private init() {}
