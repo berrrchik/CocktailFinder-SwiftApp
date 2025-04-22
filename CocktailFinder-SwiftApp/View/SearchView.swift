@@ -7,7 +7,7 @@ struct SearchView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 SearchBar(text: $viewModel.searchText, 
-                         isSearchBarFocused: $viewModel.isSearchBarFocused,
+                         isSearching: $viewModel.isSearchBarFocused,
                          onSearch: {
                     viewModel.performSearch()
                 }, onClear: {
@@ -74,7 +74,7 @@ struct SearchView: View {
 
 struct SearchBar: View {
     @Binding var text: String
-    @Binding var isSearchBarFocused: Bool
+    @Binding var isSearching: Bool
     @FocusState private var isFocused: Bool
     var onSearch: () -> Void
     var onClear: () -> Void
@@ -88,7 +88,11 @@ struct SearchBar: View {
                 .cornerRadius(8)
                 .focused($isFocused)
                 .onChange(of: isFocused) { newValue in
-                    isSearchBarFocused = newValue
+                    isSearching = newValue
+                }
+                .onSubmit {
+                    isFocused = false
+                    onSearch()
                 }
                 .overlay(
                     HStack {
