@@ -1,6 +1,6 @@
 import Foundation
 
-protocol CocktailServiceProtocol {
+protocol APIServiceProtocol {
     func fetchCocktailByName(_ name: String) async throws -> [Cocktail]
     func fetchFilterOptions() async throws -> [FilterCategory]
     func fetchRandomCocktail() async throws -> Cocktail
@@ -8,7 +8,7 @@ protocol CocktailServiceProtocol {
     func fetchCocktailsByFilter(type: FilterType, value: String) async throws -> [Cocktail]
 }
 
-class APIService: CocktailServiceProtocol {
+class APIService: APIServiceProtocol {
     static let shared = APIService()
     private let baseURL = "https://www.thecocktaildb.com/api/json/v1/1"
     private let decoder = JSONDecoder()
