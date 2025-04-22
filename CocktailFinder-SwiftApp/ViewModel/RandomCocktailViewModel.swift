@@ -5,9 +5,10 @@ class RandomCocktailViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var error: Error?
     
-    private let apiService = APIService.shared
+    private let apiService: APIServiceProtocol
     
-    init() {
+    init(apiService: APIServiceProtocol = APIService.shared) {
+        self.apiService = apiService
         loadRandomCocktail()
     }
     
