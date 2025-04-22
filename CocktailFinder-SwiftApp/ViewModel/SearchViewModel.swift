@@ -10,11 +10,14 @@ class SearchViewModel: ObservableObject {
     @Published var hasSearched: Bool = false
     @Published var isSearchBarFocused: Bool = false
     
-    private let apiService = APIService.shared
-    private let cacheService = CocktailCacheService.shared
+    private let apiService: APIServiceProtocol
+    private let cacheService: CocktailCacheServiceProtocol
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    init(apiService: APIServiceProtocol = APIService.shared, 
+         cacheService: CocktailCacheServiceProtocol = CocktailCacheService.shared) {
+        self.apiService = apiService
+        self.cacheService = cacheService
         loadPopularCocktails()
     }
     
