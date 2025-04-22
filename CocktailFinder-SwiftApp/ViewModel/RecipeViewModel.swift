@@ -6,20 +6,27 @@ class RecipeViewModel: ObservableObject {
     @Published var error: Error?
     @Published var isFavorite: Bool = false
     
-    private let apiService = APIService.shared
-    private let favoritesService = FavoritesService.shared
+    private let apiService: APIServiceProtocol
+    private let favoritesService: FavoritesServiceProtocol
     private let drinkId: String?
     
-    init(drinkId: String) {
+    init(drinkId: String, 
+         apiService: APIServiceProtocol = APIService.shared,
+         favoritesService: FavoritesServiceProtocol = FavoritesService.shared) {
         self.drinkId = drinkId
+        self.apiService = apiService
+        self.favoritesService = favoritesService
         self.cocktail = nil
         loadCocktailData()
     }
     
-    init(cocktail: Cocktail) {
+    init(cocktail: Cocktail,
+         favoritesService: FavoritesServiceProtocol = FavoritesService.shared) {
         self.drinkId = nil
         self.cocktail = cocktail
         self.isLoading = false
+        self.apiService = APIService.shared
+        self.favoritesService = favoritesService
         
         self.isFavorite = favoritesService.isFavorite(cocktail)
     }
