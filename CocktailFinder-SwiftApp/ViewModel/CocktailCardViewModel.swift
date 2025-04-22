@@ -4,10 +4,11 @@ class CocktailCardViewModel: ObservableObject {
     @Published var cocktail: Cocktail
     @Published var isFavorite: Bool = false
     
-    private let favoritesService = FavoritesService.shared
+    internal let favoritesService: FavoritesServiceProtocol
     
-    init(cocktail: Cocktail) {
+    init(cocktail: Cocktail, favoritesService: FavoritesServiceProtocol = FavoritesService.shared) {
         self.cocktail = cocktail
+        self.favoritesService = favoritesService
         checkIsFavorite()
     }
     
