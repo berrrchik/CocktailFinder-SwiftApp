@@ -3,9 +3,10 @@ import Foundation
 class FavoritesViewModel: ObservableObject {
     @Published var favorites: [Cocktail] = []
     
-    private let favoritesService = FavoritesService.shared
+    private let favoritesService: FavoritesServiceProtocol
     
-    init() {
+    init(favoritesService: FavoritesServiceProtocol = FavoritesService.shared) {
+        self.favoritesService = favoritesService
         loadFavorites()
     }
     
