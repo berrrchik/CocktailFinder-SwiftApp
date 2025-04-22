@@ -3,7 +3,7 @@ import SwiftUI
 
 class FilterViewModel: ObservableObject {
     @Published var filterManager: FilterManager
-    private let apiService = APIService.shared
+    private let apiService: APIServiceProtocol
     @Published var isLoading: Bool = false
     @Published var error: Error?
     private var loadingTask: Task<Void, Never>?
@@ -12,8 +12,10 @@ class FilterViewModel: ObservableObject {
     private var lastFilterValue: String?
     private var lastFilterState: [UUID: Bool] = [:]
     
-    init() {
-        self.filterManager = FilterManager.shared
+    init(apiService: APIServiceProtocol = APIService.shared,
+         filterManager: FilterManager = FilterManager.shared) {
+        self.apiService = apiService
+        self.filterManager = filterManager
         print("FilterViewModel инициализирован с общим FilterManager")
         
         self.filterManager.viewModel = self
