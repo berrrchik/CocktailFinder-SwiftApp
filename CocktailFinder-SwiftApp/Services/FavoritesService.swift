@@ -1,6 +1,13 @@
 import Foundation
 
-class FavoritesService {
+protocol FavoritesServiceProtocol {
+    func addToFavorites(_ cocktail: Cocktail)
+    func removeFromFavorites(_ cocktail: Cocktail)
+    func isFavorite(_ cocktail: Cocktail) -> Bool
+    func getFavorites() -> [Cocktail]
+}
+
+class FavoritesService: FavoritesServiceProtocol {
     static let shared = FavoritesService()
     private let favoritesKey = "favoriteCocktails"
     
