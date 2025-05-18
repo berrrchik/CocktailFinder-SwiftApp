@@ -6,6 +6,7 @@ protocol APIServiceProtocol {
     func fetchRandomCocktail() async throws -> Cocktail
     func fetchCocktailById(_ id: String) async throws -> Cocktail
     func fetchCocktailsByFilter(type: FilterType, value: String) async throws -> [Cocktail]
+    func fetchCocktailsByFirstLetter(_ letter: String) async throws -> [Cocktail]
 }
 
 class APIService: APIServiceProtocol {
@@ -326,6 +327,31 @@ class APIService: APIServiceProtocol {
         }
         
         return results.map { FilterOption(name: $0, isSelected: false) }
+    }
+    
+    func fetchCocktailsByFirstLetter(_ letter: String) async throws -> [Cocktail] {
+        try Task.checkCancellation()
+        
+        let url = URL(string: "\(baseURL)/search.php?f=\(letter)")!
+        
+        do {
+            let (data, response) = try await session.data(from: url)
+            
+            try Task.checkCancellation()
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                throw APIError.invalidResponse
+            }
+            
+            let cocktailResponse = try decoder.decode(CocktailResponse.self, from: data)
+            return cocktailResponse.drinks
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            print("Ошибка при поиске коктейлей по букве \(letter): \(error)")
+            throw error
+        }
     }
 }
 
