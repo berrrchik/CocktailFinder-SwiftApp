@@ -16,6 +16,21 @@ struct SearchView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 
+                VStack(alignment: .leading, spacing: 8) {
+                
+                    AlphabetCarouselView(selectedLetter: viewModel.selectedLetter) { letter in
+                        viewModel.searchCocktailsByLetter(letter)
+                    }
+                }
+                
+                if viewModel.selectedLetter != nil {
+                    Text("Коктейли на букву \(viewModel.selectedLetter?.uppercased() ?? "")")
+                        .font(.headline)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGray6))
+                }
+                
                 ScrollView {
                     VStack {
                         if viewModel.isLoading {
