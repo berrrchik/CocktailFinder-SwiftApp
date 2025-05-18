@@ -9,6 +9,7 @@ class SearchViewModel: ObservableObject {
     @Published var error: Error? = nil
     @Published var hasSearched: Bool = false
     @Published var isSearchBarFocused: Bool = false
+    @Published var selectedLetter: String? = nil
     
     private let apiService: APIServiceProtocol
     private let cacheService: CocktailCacheServiceProtocol
@@ -35,6 +36,7 @@ class SearchViewModel: ObservableObject {
         searchResults = []
         hasSearched = false
         error = nil
+        selectedLetter = nil
     }
     
     func searchCocktails(by name: String) {
@@ -44,6 +46,32 @@ class SearchViewModel: ObservableObject {
         Task {
             do {
                 let cocktails = try await apiService.fetchCocktailByName(name)
+                
+                let work = DispatchWorkItem {
+                    self.searchResults = cocktails
+                    self.isLoading = false
+                }
+                DispatchQueue.main.async(execute: work)
+            } catch {
+                let errorWork = DispatchWorkItem {
+                    self.error = error
+                    self.searchResults = []
+                    self.isLoading = false
+                }
+                DispatchQueue.main.async(execute: errorWork)
+            }
+        }
+    }
+    
+    func searchCocktailsByLetter(_ letter: String) {
+        isLoading = true
+        error = nil
+        hasSearched = true
+        selectedLetter = letter
+        
+        Task {
+            do {
+                let cocktails = try await apiService.fetchCocktailsByFirstLetter(letter)
                 
                 let work = DispatchWorkItem {
                     self.searchResults = cocktails
