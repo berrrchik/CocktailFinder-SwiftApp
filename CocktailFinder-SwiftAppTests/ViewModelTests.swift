@@ -9,7 +9,7 @@ class CocktailCardViewModelTests: XCTestCase {
     
     override func setUpWithError() throws {
         mockFavoritesService = MockFavoritesService()
-        let sampleCocktail = MockCocktailService.createSampleCocktail()
+        let sampleCocktail = MockCocktailService.createSampleCocktail(id: "11000")
         
         viewModel = CocktailCardViewModel(
             cocktail: sampleCocktail, 
