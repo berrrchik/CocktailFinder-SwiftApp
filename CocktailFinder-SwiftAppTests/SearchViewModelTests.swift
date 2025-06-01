@@ -73,7 +73,7 @@ class SearchViewModelTests: XCTestCase {
     
     func testPerformSearchWithEmptyText() {
         viewModel.searchText = ""
-        viewModel.searchResults = [MockCocktailService.createSampleCocktail()]
+        viewModel.searchResults = [MockCocktailService.createSampleCocktail(id: "11000")]
         viewModel.hasSearched = true
         
         viewModel.performSearch()
@@ -83,7 +83,7 @@ class SearchViewModelTests: XCTestCase {
     }
     
     func testClearSearchResults() {
-        viewModel.searchResults = [MockCocktailService.createSampleCocktail()]
+        viewModel.searchResults = [MockCocktailService.createSampleCocktail(id: "11000")]
         viewModel.hasSearched = true
         viewModel.error = NSError(domain: "test", code: 123, userInfo: nil)
         
@@ -96,8 +96,8 @@ class SearchViewModelTests: XCTestCase {
     
     func testSearchCocktailsSuccess() async {
         let expectedCocktails = [
-            MockCocktailService.createSampleCocktail(),
-            MockCocktailService.createSampleCocktail()
+            MockCocktailService.createSampleCocktail(id: "11000"),
+            MockCocktailService.createSampleCocktail(id: "11001")
         ]
         mockAPIService.mockedCocktails = expectedCocktails
         
@@ -150,8 +150,8 @@ class SearchViewModelTests: XCTestCase {
     
     func testLoadPopularCocktailsSuccess() async {
         let expectedCocktails = [
-            MockCocktailService.createSampleCocktail(),
-            MockCocktailService.createSampleCocktail()
+            MockCocktailService.createSampleCocktail(id: "11000"),
+            MockCocktailService.createSampleCocktail(id: "11001")
         ]
         mockAPIService.mockedCocktails = expectedCocktails
         
