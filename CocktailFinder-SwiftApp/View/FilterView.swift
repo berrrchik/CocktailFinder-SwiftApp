@@ -237,13 +237,13 @@ struct FilterOptionRow: View {
         } label: {
             HStack {
                 Text(option.name)
-                    .foregroundColor(option.isSelected ? .blue : .primary)
+                    .foregroundColor(option.isSelected ? .customOrange : .primary)
                 
                 Spacer()
                 
                 if option.isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundColor(.blue)
+                        .foregroundColor(.customOrange)
                 }
             }
             .contentShape(Rectangle())

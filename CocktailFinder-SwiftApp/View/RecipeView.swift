@@ -107,7 +107,7 @@ struct RecipeView: View {
                             Image(systemName: "chevron.left")
                             Text("Назад")
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(.customOrange)
                     }
                 }
                 

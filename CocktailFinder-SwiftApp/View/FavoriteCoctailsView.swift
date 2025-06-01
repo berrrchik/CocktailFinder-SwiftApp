@@ -12,7 +12,7 @@ struct FavoriteCoctailsView: View {
                         
                         Image(systemName: "heart.fill")
                             .font(.system(size: 70))
-                            .foregroundColor(.blue)
+                            .foregroundColor(.customOrange)
                         
                         Text("Здесь будут ваши любимые коктейли")
                             .font(.title2)

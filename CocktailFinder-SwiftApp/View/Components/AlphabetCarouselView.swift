@@ -19,12 +19,12 @@ struct AlphabetCarouselView: View {
                             .font(.headline)
                             .fontWeight(.semibold)
                             .frame(width: 44, height: 44)
-                            .background(isSelected ? Color.orange : Color.blue)
+                            .background(isSelected ? Color.customOrange : Color.customOrange)
                             .foregroundColor(.white)
                             .cornerRadius(8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 2)
+                                    .stroke(isSelected ? Color.customOrange : Color.clear, lineWidth: 2)
                             )
                     }
                 }

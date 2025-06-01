@@ -43,7 +43,7 @@ struct RandomCocktailView: View {
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 12)
-                                .background(Color.blue)
+                                .background(Color.customOrange)
                                 .cornerRadius(12)
                             }
                         }

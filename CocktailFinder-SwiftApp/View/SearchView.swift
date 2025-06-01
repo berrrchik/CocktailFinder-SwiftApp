@@ -136,7 +136,7 @@ struct SearchBar: View {
                 Text("Поиск")
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color.blue)
+                    .background(Color.customOrange)
                     .foregroundColor(.white)
                     .cornerRadius(8)
             }
