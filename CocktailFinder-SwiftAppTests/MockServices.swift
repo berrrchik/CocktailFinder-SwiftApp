@@ -119,11 +119,23 @@ class MockCocktailService: APIServiceProtocol {
     }
     
     static func createSampleCocktail(id: String = "11000") -> Cocktail {
-        let cocktail = try! JSONDecoder().decode(Cocktail.self, from: sampleCocktailJSON())
+        let jsonData: Data
+        switch id {
+        case "11001":
+            jsonData = margaritaJSON()
+        case "11002":
+            jsonData = pinaColadaJSON()
+        case "11003":
+            jsonData = cosmopolitanJSON()
+        default:
+            jsonData = mojitoJSON()
+        }
+        
+        let cocktail = try! JSONDecoder().decode(Cocktail.self, from: jsonData)
         return cocktail
     }
     
-    static func sampleCocktailJSON() -> Data {
+    static func mojitoJSON() -> Data {
         let jsonString = """
         {
             "idDrink": "11000",
@@ -146,8 +158,81 @@ class MockCocktailService: APIServiceProtocol {
             "strMeasure5": "Fill"
         }
         """
-        
         return jsonString.data(using: .utf8)!
+    }
+    
+    static func margaritaJSON() -> Data {
+        let jsonString = """
+        {
+            "idDrink": "11001",
+            "strDrink": "Margarita",
+            "strTags": "IBA,ContemporaryClassic",
+            "strCategory": "Ordinary Drink",
+            "strAlcoholic": "Alcoholic",
+            "strGlass": "Cocktail glass",
+            "strInstructions": "Rub the rim of the glass with the lime slice to make the salt stick to it. Take care to moisten only the outer rim and sprinkle the salt on it. The salt should present to the lips of the imbiber and never mix into the cocktail. Shake the other ingredients with ice, then carefully pour into the glass.",
+            "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
+            "strIngredient1": "Tequila",
+            "strIngredient2": "Triple sec",
+            "strIngredient3": "Lime juice",
+            "strIngredient4": "Salt",
+            "strMeasure1": "1 1/2 oz",
+            "strMeasure2": "1/2 oz",
+            "strMeasure3": "1 oz",
+            "strMeasure4": "Pinch"
+        }
+        """
+        return jsonString.data(using: .utf8)!
+    }
+    
+    static func pinaColadaJSON() -> Data {
+        let jsonString = """
+        {
+            "idDrink": "11002",
+            "strDrink": "Pina Colada",
+            "strTags": "IBA,ContemporaryClassic,Coconut",
+            "strCategory": "Ordinary Drink",
+            "strAlcoholic": "Alcoholic",
+            "strGlass": "Hurricane glass",
+            "strInstructions": "Mix with crushed ice in blender until smooth. Pour into chilled glass, garnish and serve.",
+            "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/cpf4jb1606768744.jpg",
+            "strIngredient1": "White rum",
+            "strIngredient2": "Coconut milk",
+            "strIngredient3": "Pineapple",
+            "strMeasure1": "3 oz",
+            "strMeasure2": "3 tbsp",
+            "strMeasure3": "3 oz"
+        }
+        """
+        return jsonString.data(using: .utf8)!
+    }
+    
+    static func cosmopolitanJSON() -> Data {
+        let jsonString = """
+        {
+            "idDrink": "11003",
+            "strDrink": "Cosmopolitan",
+            "strTags": "IBA,ContemporaryClassic",
+            "strCategory": "Cocktail",
+            "strAlcoholic": "Alcoholic",
+            "strGlass": "Cocktail glass",
+            "strInstructions": "Add all ingredients to cocktail shaker filled with ice. Shake well and double strain into chilled cocktail glass. Garnish with lime wheel.",
+            "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/kpsajh1504368362.jpg",
+            "strIngredient1": "Vodka",
+            "strIngredient2": "Lime juice",
+            "strIngredient3": "Cointreau",
+            "strIngredient4": "Cranberry juice",
+            "strMeasure1": "1 1/4 oz",
+            "strMeasure2": "1/4 oz",
+            "strMeasure3": "1/4 oz",
+            "strMeasure4": "1/4 cup"
+        }
+        """
+        return jsonString.data(using: .utf8)!
+    }
+    
+    static func sampleCocktailJSON() -> Data {
+        return mojitoJSON()
     }
 }
 
