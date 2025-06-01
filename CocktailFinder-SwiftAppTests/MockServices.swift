@@ -1,7 +1,7 @@
 import Foundation
 @testable import CocktailFinder_SwiftApp
 
-class MockCocktailService: CocktailServiceProtocol {
+class MockCocktailService: APIServiceProtocol {
     var shouldThrowError = false
     var delayInSeconds: Double? = nil
     
@@ -98,6 +98,14 @@ class MockCocktailService: CocktailServiceProtocol {
         }
         
         return cocktails
+    }
+    
+    func fetchCocktailsByFirstLetter(_ letter: String) async throws -> [Cocktail] {
+        if shouldThrowError {
+            throw APIError.invalidResponse
+        }
+        
+        return mockedCocktails
     }
     
     func reset() {
