@@ -1,0 +1,32 @@
+name: Simple iOS Tests
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  simple-test:
+    name: Simple Build Test
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Show Xcode version
+      run: xcodebuild -version
+    
+    - name: List project contents
+      run: ls -la
+    
+    - name: Check project file
+      run: |
+        echo "Checking project file..."
+        ls -la CocktailFinder-SwiftApp.xcodeproj/
+        file CocktailFinder-SwiftApp.xcodeproj/project.pbxproj
+    
+    - name: Simple build only
+      run: |
+        xcodebuild -project CocktailFinder-SwiftApp.xcodeproj \
+                   -scheme CocktailFinder-SwiftApp \
+                   -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+                   clean build 
