@@ -22,7 +22,7 @@ jobs:
       run: |
         xcodebuild -project CocktailFinder-SwiftApp.xcodeproj \
                    -scheme CocktailFinder-SwiftApp \
-                   -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+                   -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
                    clean test
                    
     - name: Upload test results
