@@ -1,0 +1,156 @@
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Позволяет запускать вручную
+
+env:
+  DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+
+jobs:
+  # Параллельные задачи для ускорения
+  lint:
+    name: SwiftLint
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install SwiftLint
+      run: brew install swiftlint
+      
+    - name: Run SwiftLint
+      run: swiftlint --reporter github-actions-logging
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        destination: 
+          - 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+          - 'platform=iOS Simulator,name=iPhone 15 Pro,OS=latest'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode_15.2.app/Contents/Developer
+    
+    - name: Show Xcode version
+      run: xcodebuild -version
+    
+    - name: Show available simulators
+      run: xcrun simctl list devicetypes
+    
+    - name: Cache build artifacts
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData
+          ~/.cache/org.swift.swiftpm/
+        key: ${{ runner.os }}-xcode-${{ hashFiles('**/*.xcodeproj') }}
+        restore-keys: |
+          ${{ runner.os }}-xcode-
+    
+    - name: Build for Testing
+      run: |
+        xcodebuild build-for-testing \
+          -project CocktailFinder-SwiftApp.xcodeproj \
+          -scheme CocktailFinder-SwiftApp \
+          -destination '${{ matrix.destination }}'
+    
+    - name: Run Tests
+      run: |
+        xcodebuild test-without-building \
+          -project CocktailFinder-SwiftApp.xcodeproj \
+          -scheme CocktailFinder-SwiftApp \
+          -destination '${{ matrix.destination }}' \
+          -resultBundlePath TestResults.xcresult
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ strategy.job-index }}
+        path: TestResults.xcresult
+        retention-days: 30
+
+  ui-tests:
+    name: UI Tests
+    runs-on: macos-latest
+    needs: unit-tests  # Запускается после unit-tests
+    if: github.ref == 'refs/heads/main'  # Только для main ветки
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Select Xcode
+      run: sudo xcode-select -switch /Applications/Xcode_15.2.app/Contents/Developer
+    
+    - name: Run UI Tests
+      run: |
+        xcodebuild test \
+          -project CocktailFinder-SwiftApp.xcodeproj \
+          -scheme CocktailFinder-SwiftApp \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          -only-testing CocktailFinder-SwiftAppUITests
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: macos-latest
+    needs: unit-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download test results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: test-results-*
+        merge-multiple: true
+    
+    - name: Generate Coverage Report
+      run: |
+        xcrun xccov view --report --json TestResults.xcresult > coverage.json
+        xcrun xccov view --report TestResults.xcresult
+    
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.json
+        fail_ci_if_error: false
+
+  build-release:
+    name: Build Release
+    runs-on: macos-latest
+    needs: [lint, unit-tests]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Release
+      run: |
+        xcodebuild clean build \
+          -project CocktailFinder-SwiftApp.xcodeproj \
+          -scheme CocktailFinder-SwiftApp \
+          -configuration Release \
+          -destination 'generic/platform=iOS'
+
+  notification:
+    name: Notify Results
+    runs-on: macos-latest
+    needs: [lint, unit-tests, ui-tests, code-coverage]
+    if: always()
+    
+    steps:
+    - name: Notify Success
+      if: needs.unit-tests.result == 'success'
+      run: echo "✅ Все тесты прошли успешно!"
+      
+    - name: Notify Failure  
+      if: needs.unit-tests.result == 'failure'
+      run: echo "❌ Тесты провалились!" 

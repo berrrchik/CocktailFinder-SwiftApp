@@ -1,0 +1,43 @@
+name: Swift Package Manager CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  spm-build:
+    name: SPM Build & Test
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        swift-version: ['5.9', '5.10']
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Swift ${{ matrix.swift-version }}
+      uses: swift-actions/setup-swift@v1
+      with:
+        swift-version: ${{ matrix.swift-version }}
+    
+    - name: Cache Swift packages
+      uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+    
+    - name: Build
+      run: swift build
+    
+    - name: Run tests
+      run: swift test --enable-code-coverage
+    
+    - name: Generate coverage report
+      run: |
+        xcrun llvm-cov export -format="lcov" \
+          .build/debug/CocktailFinderPackageTests.xctest/Contents/MacOS/CocktailFinderPackageTests \
+          -instr-profile .build/debug/codecov/default.profdata > coverage.lcov 
