@@ -30,8 +30,8 @@ jobs:
     strategy:
       matrix:
         destination: 
-          - 'platform=iOS Simulator,name=iPhone 15,OS=latest'
-          - 'platform=iOS Simulator,name=iPhone 15 Pro,OS=latest'
+          - 'platform=iOS Simulator,name=iPhone 16,OS=latest'
+          - 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest'
     
     steps:
     - uses: actions/checkout@v4
@@ -95,7 +95,7 @@ jobs:
         xcodebuild test \
           -project CocktailFinder-SwiftApp.xcodeproj \
           -scheme CocktailFinder-SwiftApp \
-          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
           -only-testing CocktailFinder-SwiftAppUITests
 
   code-coverage:
