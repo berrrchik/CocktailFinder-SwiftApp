@@ -7,16 +7,21 @@ on:
     branches: [ main ]
   workflow_dispatch:  # Позволяет запускать вручную
 
-env:
-  DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
-
 jobs:
   # Параллельные задачи для ускорения
   lint:
     name: SwiftLint
     runs-on: macos-latest
+    # Пропускаем, если в сообщении коммита есть [skip ci] или [ci skip]
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
+    
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     
     - name: Install SwiftLint
       run: brew install swiftlint
@@ -27,6 +32,8 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: macos-latest
+    # Пропускаем, если в сообщении коммита есть [skip ci] или [ci skip]
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
     strategy:
       matrix:
         destination: 
@@ -36,8 +43,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app/Contents/Developer
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     
     - name: Show Xcode version
       run: xcodebuild -version
@@ -82,13 +91,15 @@ jobs:
     name: UI Tests
     runs-on: macos-latest
     needs: unit-tests  # Запускается после unit-tests
-    if: github.ref == 'refs/heads/main'  # Только для main ветки
+    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')  # Только для main ветки
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app/Contents/Developer
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     
     - name: Run UI Tests
       run: |
@@ -102,9 +113,15 @@ jobs:
     name: Code Coverage
     runs-on: macos-latest
     needs: unit-tests
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
     
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     
     - name: Download test results
       uses: actions/download-artifact@v4
@@ -127,10 +144,15 @@ jobs:
     name: Build Release
     runs-on: macos-latest
     needs: [lint, unit-tests]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')
     
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     
     - name: Build Release
       run: |
@@ -144,7 +166,7 @@ jobs:
     name: Notify Results
     runs-on: macos-latest
     needs: [lint, unit-tests, ui-tests, code-coverage]
-    if: always()
+    if: always() && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')
     
     steps:
     - name: Notify Success

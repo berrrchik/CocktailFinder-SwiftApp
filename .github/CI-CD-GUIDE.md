@@ -3,26 +3,24 @@
 ## 🚀 Обзор
 
 Этот проект использует GitHub Actions для автоматизации:
-- ✅ Тестирования кода
+- ✅ Тестирования кода (Unit + UI тесты)
 - 🔍 Линтинга (SwiftLint)
 - 📊 Анализа покрытия кода
 - 🔨 Сборки релизных версий
-- 📱 UI-тестирования
+- 📱 Параллельного тестирования на разных симуляторах
 
 ## 📁 Структура файлов
 
 ```
 .github/
 ├── workflows/
-│   ├── ios-ci.yml      # Основной CI/CD pipeline
-│   ├── spm-ci.yml      # Swift Package Manager CI
-│   └── tests.yml       # Упрощенная версия для тестов
-└── README.md           # Этот файл
+│   └── ios-ci.yml          # Основной CI/CD pipeline
+└── CI-CD-GUIDE.md          # Этот файл
 ```
 
 ## 🔧 Конфигурация
 
-### 1. Основной пайплайн (ios-ci.yml)
+### Основной пайплайн (ios-ci.yml)
 
 #### Триггеры:
 - **Push** в ветки `main` и `develop`
@@ -31,13 +29,13 @@
 
 #### Задачи (Jobs):
 
-##### 📝 Lint
+##### 📝 SwiftLint
 ```yaml
 lint:
   name: SwiftLint
   runs-on: macos-latest
 ```
-- Устанавливает SwiftLint
+- Устанавливает SwiftLint через Homebrew
 - Проверяет стиль кода
 - Отчеты в формате GitHub Actions
 
@@ -47,8 +45,8 @@ unit-tests:
   strategy:
     matrix:
       destination: 
-        - 'iPhone 15'
-        - 'iPhone 15 Pro'
+        - 'iPhone 16'
+        - 'iPhone 16 Pro'
 ```
 - Параллельное тестирование на разных симуляторах
 - Кэширование зависимостей для ускорения
@@ -103,14 +101,24 @@ swiftlint
 2. Нажать `Run workflow`
 3. Выбрать ветку и нажать `Run workflow`
 
+#### 🚫 Пропуск CI/CD:
+Добавьте в сообщение коммита одно из:
+- `[skip ci]`
+- `[ci skip]`
+
+Пример:
+```bash
+git commit -m "docs: update README [skip ci]"
+```
+
 ## 📊 Мониторинг
 
 ### Badges для README
 Добавьте в основной README.md:
 
 ```markdown
-[![iOS CI](https://github.com/username/CocktailFinder-SwiftApp/workflows/iOS%20CI%2FCD/badge.svg)](https://github.com/username/CocktailFinder-SwiftApp/actions)
-[![codecov](https://codecov.io/gh/username/CocktailFinder-SwiftApp/branch/main/graph/badge.svg)](https://codecov.io/gh/username/CocktailFinder-SwiftApp)
+[![iOS CI/CD](https://github.com/berrrchik/CocktailFinder-SwiftApp/workflows/iOS%20CI%2FCD/badge.svg)](https://github.com/berrrchik/CocktailFinder-SwiftApp/actions)
+[![codecov](https://codecov.io/gh/berrrchik/CocktailFinder-SwiftApp/branch/main/graph/badge.svg)](https://codecov.io/gh/berrrchik/CocktailFinder-SwiftApp)
 ```
 
 ### Просмотр результатов:
@@ -120,10 +128,13 @@ swiftlint
 
 ## 🔧 Настройка
 
-### Переменные окружения
+### Xcode версии
+Используется `latest-stable` через:
 ```yaml
-env:
-  DEVELOPER_DIR: /Applications/Xcode_15.2.app/Contents/Developer
+- name: Set up Xcode
+  uses: maxim-lobanov/setup-xcode@v1
+  with:
+    xcode-version: latest-stable
 ```
 
 ### Секреты (Settings → Secrets)
@@ -145,8 +156,8 @@ env:
 
 ## 📱 Поддерживаемые устройства
 
-- iPhone 15 (iOS latest)
-- iPhone 15 Pro (iOS latest)
+- iPhone 16 (iOS latest)
+- iPhone 16 Pro (iOS latest)
 - Легко добавить другие в `matrix.destination`
 
 ## 🐛 Отладка
@@ -174,7 +185,6 @@ env:
 ```yaml
 - name: Free disk space
   run: |
-    sudo rm -rf /Applications/Xcode_*.app
     sudo rm -rf ~/Library/Developer/Xcode/DerivedData/*
 ```
 
@@ -183,11 +193,11 @@ env:
 - ✅ **Success** - все тесты прошли
 - ❌ **Failure** - есть проваленные тесты
 - 🟡 **Cancelled** - отменено пользователем
-- ⚪ **Skipped** - пропущено по условию
+- ⚪ **Skipped** - пропущено по условию или `[skip ci]`
 
 ## 🚀 Продвинутые возможности
 
-### Conditional runs:
+### Условный запуск:
 ```yaml
 if: github.ref == 'refs/heads/main'        # Только main
 if: contains(github.event.head_commit.message, '[skip ci]')  # Пропуск по сообщению
@@ -197,17 +207,8 @@ if: contains(github.event.head_commit.message, '[skip ci]')  # Пропуск п
 ```yaml
 strategy:
   matrix:
-    xcode: ['15.1', '15.2']
-    ios: ['17.0', '17.1']
-```
-
-### Slack уведомления:
-```yaml
-- name: Slack Notification
-  uses: 8398a7/action-slack@v3
-  with:
-    status: ${{ job.status }}
-    webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    destination: ['iPhone 16', 'iPhone 16 Pro']
+    xcode: ['latest-stable']
 ```
 
 ## 📚 Полезные ссылки
@@ -222,4 +223,5 @@ strategy:
 Регулярно обновляйте версии actions:
 - `actions/checkout@v4` → latest
 - `actions/cache@v4` → latest
-- `codecov/codecov-action@v4` → latest 
+- `codecov/codecov-action@v4` → latest
+- `maxim-lobanov/setup-xcode@v1` → latest 
