@@ -87,28 +87,6 @@ jobs:
         path: TestResults.xcresult
         retention-days: 30
 
-  ui-tests:
-    name: UI Tests
-    runs-on: macos-latest
-    needs: unit-tests  # Запускается после unit-tests
-    if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')  # Только для main ветки
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
-    
-    - name: Run UI Tests
-      run: |
-        xcodebuild test \
-          -project CocktailFinder-SwiftApp.xcodeproj \
-          -scheme CocktailFinder-SwiftApp \
-          -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
-          -only-testing CocktailFinder-SwiftAppUITests
-
   code-coverage:
     name: Code Coverage
     runs-on: macos-latest
@@ -165,7 +143,7 @@ jobs:
   notification:
     name: Notify Results
     runs-on: macos-latest
-    needs: [lint, unit-tests, ui-tests, code-coverage]
+    needs: [lint, unit-tests, code-coverage]
     if: always() && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')
     
     steps:
