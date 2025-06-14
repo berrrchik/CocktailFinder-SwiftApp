@@ -44,8 +44,10 @@ struct Cocktail: Codable, Identifiable {
         let dynamicContainer = try decoder.container(keyedBy: DynamicCodingKeys.self)
         
         for i in 1...15 {
-            let ingredientKey = DynamicCodingKeys(stringValue: "strIngredient\(i)")!
-            let measureKey = DynamicCodingKeys(stringValue: "strMeasure\(i)")!
+            guard let ingredientKey = DynamicCodingKeys(stringValue: "strIngredient\(i)"),
+                  let measureKey = DynamicCodingKeys(stringValue: "strMeasure\(i)") else {
+                continue
+            }
             
             if let ingredient = try dynamicContainer.decodeIfPresent(String.self, forKey: ingredientKey),
                !ingredient.isEmpty,
