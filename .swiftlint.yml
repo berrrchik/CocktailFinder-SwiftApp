@@ -1,25 +1,31 @@
-# SwiftLint конфигурация (мягкая версия для начала)
+# SwiftLint конфигурация (улучшенная версия)
 # https://realm.github.io/SwiftLint/
 
-# Отключенные правила (больше для простоты)
+# Отключенные правила
 disabled_rules:
   - trailing_whitespace
   - line_length
   - file_length
-  - force_unwrapping           # Разрешаем ! в тестах
-  - force_try                  # Разрешаем try! в тестах  
+  - trailing_newline
   - identifier_name            # Разрешаем короткие имена (i, j)
   - type_name                  # Разрешаем _ в именах типов
   - function_body_length       # Разрешаем длинные функции
   - cyclomatic_complexity      # Разрешаем сложные функции
-  - trailing_newline           # Не требуем пустую строку в конце
 
-# Включенные простые правила
+# Включенные правила
 opt_in_rules:
   - empty_count
   - empty_string
   - redundant_nil_coalescing
   - syntactic_sugar
+  - force_unwrapping           # Запрещаем ! для распаковки опционалов
+  - force_try                  # Запрещаем try! для обработки ошибок
+  - closure_end_indentation    # Проверяем отступы закрывающих скобок
+  - closure_spacing            # Проверяем пробелы в замыканиях
+  - collection_alignment       # Выравнивание коллекций
+  - contains_over_filter_count # Используем contains вместо filter().count > 0
+  - redundant_type_annotation  # Убираем избыточные типы
+  - mark                       # Требуем использовать // MARK: -
 
 # Исключенные папки
 excluded:
@@ -29,6 +35,7 @@ excluded:
   - DerivedData
   - fastlane
   - .git
+  - CocktailFinder-SwiftAppUITests
 
 # Включенные папки
 included:
@@ -54,6 +61,10 @@ function_body_length:
 type_body_length:
   warning: 500
   error: 1000
+
+# Настройка правила force_unwrapping
+force_unwrapping:
+  severity: error
 
 # Убираем пользовательские правила для простоты
 # custom_rules:
