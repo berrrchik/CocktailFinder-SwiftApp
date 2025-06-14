@@ -131,8 +131,11 @@ class MockCocktailService: APIServiceProtocol {
             jsonData = mojitoJSON()
         }
         
-        let cocktail = try! JSONDecoder().decode(Cocktail.self, from: jsonData)
-        return cocktail
+        do {
+            return try JSONDecoder().decode(Cocktail.self, from: jsonData)
+        } catch {
+            fatalError("Ошибка декодирования тестового коктейля: \(error)")
+        }
     }
     
     static func mojitoJSON() -> Data {
@@ -158,7 +161,10 @@ class MockCocktailService: APIServiceProtocol {
             "strMeasure5": "Fill"
         }
         """
-        return jsonString.data(using: .utf8)!
+        guard let data = jsonString.data(using: .utf8) else {
+            fatalError("Не удалось преобразовать строку JSON в данные")
+        }
+        return data
     }
     
     static func margaritaJSON() -> Data {
@@ -182,7 +188,10 @@ class MockCocktailService: APIServiceProtocol {
             "strMeasure4": "Pinch"
         }
         """
-        return jsonString.data(using: .utf8)!
+        guard let data = jsonString.data(using: .utf8) else {
+            fatalError("Не удалось преобразовать строку JSON в данные")
+        }
+        return data
     }
     
     static func pinaColadaJSON() -> Data {
@@ -204,7 +213,10 @@ class MockCocktailService: APIServiceProtocol {
             "strMeasure3": "3 oz"
         }
         """
-        return jsonString.data(using: .utf8)!
+        guard let data = jsonString.data(using: .utf8) else {
+            fatalError("Не удалось преобразовать строку JSON в данные")
+        }
+        return data
     }
     
     static func cosmopolitanJSON() -> Data {
@@ -228,7 +240,10 @@ class MockCocktailService: APIServiceProtocol {
             "strMeasure4": "1/4 cup"
         }
         """
-        return jsonString.data(using: .utf8)!
+        guard let data = jsonString.data(using: .utf8) else {
+            fatalError("Не удалось преобразовать строку JSON в данные")
+        }
+        return data
     }
     
     static func sampleCocktailJSON() -> Data {
