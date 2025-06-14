@@ -58,7 +58,9 @@ class APIService: APIServiceProtocol {
     
     func fetchCocktailByName(_ name: String) async throws -> [Cocktail] {
         let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let url = URL(string: "\(baseURL)/search.php?s=\(encodedName)")!
+        guard let url = URL(string: "\(baseURL)/search.php?s=\(encodedName)") else {
+            throw APIError.invalidURL
+        }
         
         let (data, _) = try await URLSession.shared.data(from: url)
         return try decoder.decode(CocktailResponse.self, from: data).drinks
@@ -74,7 +76,9 @@ class APIService: APIServiceProtocol {
             }
         }
         
-        let url = URL(string: "\(baseURL)/lookup.php?i=\(id)")!
+        guard let url = URL(string: "\(baseURL)/lookup.php?i=\(id)") else {
+            throw APIError.invalidURL
+        }
         
         do {
             let (data, response) = try await session.data(from: url)
@@ -105,7 +109,9 @@ class APIService: APIServiceProtocol {
     }
     
     func fetchRandomCocktail() async throws -> Cocktail {
-        let url = URL(string: "\(baseURL)/random.php")!
+        guard let url = URL(string: "\(baseURL)/random.php") else {
+            throw APIError.invalidURL
+        }
         
         let (data, response) = try await URLSession.shared.data(from: url)
         
@@ -148,7 +154,9 @@ class APIService: APIServiceProtocol {
             endpoint = "filter.php?a=\(encodedValue)"
         }
         
-        let url = URL(string: "\(baseURL)/\(endpoint)")!
+        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+            throw APIError.invalidURL
+        }
         print("Fetching cocktails with filter: \(endpoint)")
         
         do {
@@ -303,7 +311,9 @@ class APIService: APIServiceProtocol {
         case .alcoholic: endpoint = "list.php?a=list"
         }
         
-        let url = URL(string: "\(baseURL)/\(endpoint)")!
+        guard let url = URL(string: "\(baseURL)/\(endpoint)") else {
+            throw APIError.invalidURL
+        }
         print("Fetching \(type) from URL: \(url)")
         
         let (data, response) = try await URLSession.shared.data(from: url)
@@ -332,7 +342,9 @@ class APIService: APIServiceProtocol {
     func fetchCocktailsByFirstLetter(_ letter: String) async throws -> [Cocktail] {
         try Task.checkCancellation()
         
-        let url = URL(string: "\(baseURL)/search.php?f=\(letter)")!
+        guard let url = URL(string: "\(baseURL)/search.php?f=\(letter)") else {
+            throw APIError.invalidURL
+        }
         
         do {
             let (data, response) = try await session.data(from: url)
