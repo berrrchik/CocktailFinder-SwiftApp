@@ -12,7 +12,7 @@ struct CocktailFinder_SwiftAppTests {
 
 final class CocktailModelTests: XCTestCase {
     
-    var sampleCocktailJSON: Data!
+    var sampleCocktailJSON: Data?
     
     override func setUpWithError() throws {
         let jsonString = """
@@ -38,7 +38,10 @@ final class CocktailModelTests: XCTestCase {
         }
         """
         
-        sampleCocktailJSON = jsonString.data(using: .utf8)!
+        guard let data = jsonString.data(using: .utf8) else {
+            throw NSError(domain: "CocktailTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Не удалось преобразовать строку JSON в данные"])
+        }
+        sampleCocktailJSON = data
     }
     
     override func tearDownWithError() throws {
@@ -46,6 +49,11 @@ final class CocktailModelTests: XCTestCase {
     }
     
     func testCocktailDecoding() throws {
+        guard let sampleCocktailJSON = sampleCocktailJSON else {
+            XCTFail("Данные JSON не были инициализированы")
+            return
+        }
+        
         let decoder = JSONDecoder()
         let cocktail = try decoder.decode(Cocktail.self, from: sampleCocktailJSON)
         
